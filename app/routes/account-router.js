@@ -169,7 +169,7 @@ function renderChangePasswordView(res, message)
 // Reset password
 // ----------------------------------------------------------------------------
 
-router.get('/resetpassword', authentication.authorizeAdmin, async function(req, res)
+router.get('/resetpassword', authentication.authorizeAdminKey, async function(req, res)
 {
   const { username } = req.query;
   const newPassword = await accountService.resetPassword(username);
@@ -177,6 +177,25 @@ router.get('/resetpassword', authentication.authorizeAdmin, async function(req, 
   logger.debug(`Password has been reset for user: [${username}]`);
 
   res.send(newPassword);
+});
+
+// Set administrator
+// ----------------------------------------------------------------------------
+
+router.get('/setadministrator', authentication.authorizeAdminKey, async function(req, res)
+{
+  // enabled=0 removes administrator rights, anything else grants them
+  const { username, enabled } = req.query;
+  const isAdministrator = (enabled !== '0');
+
+  if (!await accountService.setAdministrator(username, isAdministrator))
+  {
+    return res.send(`user not found: ${username}`);
+  }
+
+  logger.info(`Administrator rights ${isAdministrator ? 'granted to' : 'removed from'} user: [${username}]`);
+
+  res.send(`${username} IsAdministrator=${isAdministrator}`);
 });
 
 // ----------------------------------------------------------------------------

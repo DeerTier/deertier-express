@@ -1,0 +1,75 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Categories</h1>
+    <h2>{{SelectedBoard.Description}}</h2>
+  </div>
+
+  <div class="submitButtonContainer">
+    <a class="genericButton" href="/admin/manageCategories/add?extension={{SelectedBoard.Id}}">Add Category</a>
+  </div>
+</div>
+
+<div class="siblingCategories">
+  <ol>
+    {{#each Boards}}
+      <li>
+        <a href="{{escapeHtmlAttribute LinkUrl}}" title="{{Description}}"
+          {{#if Selected}}
+            class="selected"
+          {{/if}}
+        >
+          {{Name}} <span class="boardCategoryCount">({{CategoryCount}})</span>
+        </a>
+      </li>
+    {{/each}}
+  </ol>
+</div>
+
+{{#if Message}}
+  <div class="statusLiteral">
+    {{Message}}
+  </div>
+{{/if}}
+
+<div class="scoreTable">
+  <table class="categoryTree">
+    <thead>
+      <tr>
+        <th class="idColumn">Id</th>
+        <th class="categoryNameColumn">Category</th>
+        <th class="urlNameColumn">URL Name</th>
+        <th class="timingColumn">Timing</th>
+        <th class="flagColumn">Enabled</th>
+        <th class="flagColumn">Visible</th>
+        <th class="orderColumn">Order</th>
+        <th class="editColumn">Edit</th>
+        <th class="moderatorDeleteColumn">Delete</th>
+      </tr>
+    </thead>
+
+    {{#each Sections}}
+      <tbody>
+        <tr class="categorySectionRow">
+          <td colspan="9">
+            {{Name}}
+          </td>
+        </tr>
+
+        {{#each Categories}}
+          {{> adminCategoryRow }}
+
+          {{#each Subcategories}}
+            {{> adminCategoryRow IsSubcategory=true }}
+          {{/each}}
+        {{/each}}
+      </tbody>
+    {{else}}
+      <tbody>
+        <tr>
+          <td class="emptyTree" colspan="9">No categories on this extension board yet.</td>
+        </tr>
+      </tbody>
+    {{/each}}
+  </table>
+</div>
+

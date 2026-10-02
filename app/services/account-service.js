@@ -67,7 +67,8 @@ accountService.addUser = async function(username, password)
     Name: username,
     Password: hashedPassword,
     PasswordType: passwordType,
-    IsModerator: ModeratorType.NotModerator
+    IsModerator: ModeratorType.NotModerator,
+    IsAdministrator: false
   };
 
   await accountRepository.addUser(user);
@@ -77,6 +78,16 @@ accountService.changePassword = async function(username, newPassword)
 {
   const { hashedPassword, passwordType } = passwordUtil.hashNewPassword(newPassword);
   return await accountRepository.changePassword(username, hashedPassword, passwordType);
+};
+
+accountService.setAdministrator = async function(username, isAdministrator)
+{
+  if (utils.isNullOrWhitespace(username))
+  {
+    return false;
+  }
+
+  return await accountRepository.setAdministrator(username, isAdministrator);
 };
 
 accountService.resetPassword = async function(username)

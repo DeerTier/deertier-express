@@ -1,24 +1,39 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 const utils = require('../common/utils');
+const accountService = require('../services/account-service');
 
 const authentication = {};
 
-const authTokenCookie = 'authtoken';
+// Separate cookie name on the preview site, so a production cookie shared with subdomains
+// (cookieDomain) doesn't shadow the preview site's own login
+const authTokenCookie = (config.isPreviewSite ? 'authtoken_preview' : 'authtoken');
 const authTokenCookieLifetime = 60 * 60 * 24 * 365 * 1000;
 
 authentication.createToken = function(req, res, username)
 {
   const token = jwt.sign(username, config.jwtSecret);
-  res.cookie(authTokenCookie, token, { maxAge: authTokenCookieLifetime, httpOnly:true });
+  clearHostOnlyToken(res);
+  res.cookie(authTokenCookie, token, { maxAge: authTokenCookieLifetime, httpOnly:true, sameSite: 'lax', domain: config.cookieDomain });
   req.username = username;
 };
 
 authentication.destroyToken = function(req, res)
 {
-  res.clearCookie(authTokenCookie);
+  clearHostOnlyToken(res);
+  res.clearCookie(authTokenCookie, { domain: config.cookieDomain });
   req.username = null;
 };
+
+// Remove a host-only cookie left over from before cookieDomain was configured,
+// so it doesn't shadow the shared cookie
+function clearHostOnlyToken(res)
+{
+  if (config.cookieDomain)
+  {
+    res.clearCookie(authTokenCookie);
+  }
+}
 
 authentication.authenticate = function(req, res, next)
 {
@@ -53,11 +68,11 @@ authentication.authorize = function(req, res, next)
   }
 };
 
-authentication.authorizeAdmin = function(req, res, next)
+// Admin key only. For GET requests that change data, which a logged in administrator could be
+// tricked into opening from another site.
+authentication.authorizeAdminKey = function(req, res, next)
 {
-  // Verify adminKey in request query
-  if (!utils.isNullOrWhitespace(config.adminKey) &&
-    req.query.adminKey == config.adminKey)
+  if (hasAdminKey(req))
   {
     next();
   }
@@ -66,5 +81,38 @@ authentication.authorizeAdmin = function(req, res, next)
     res.send('unauthorized access');
   }
 };
+
+// Admin key or a logged in administrator
+authentication.authorizeAdmin = async function(req, res, next)
+{
+  if (hasAdminKey(req))
+  {
+    next();
+    return;
+  }
+
+  // Or a logged in administrator
+  const user = await accountService.getAuthenticatedUser(req);
+  if (user?.IsAdministrator)
+  {
+    next();
+  }
+  else if (!user)
+  {
+    const returnUrl = req.originalUrl;
+    res.redirect(`/account/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+  }
+  else
+  {
+    res.send('unauthorized access');
+  }
+};
+
+// Verify adminKey in request query
+function hasAdminKey(req)
+{
+  return (!utils.isNullOrWhitespace(config.adminKey) &&
+    req.query.adminKey == config.adminKey);
+}
 
 module.exports = authentication;

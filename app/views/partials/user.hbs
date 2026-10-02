@@ -2,6 +2,10 @@
 
   <span>Welcome, <a href="/Account/ChangePassword">{{Username}}</a></span>
   <span> | </span>
+  {{#if (or IsModerator IsAdministrator)}}
+    <a href="/Admin">Admin</a>
+    <span> | </span>
+  {{/if}}
   <a href="/Account/LogOut?returnUrl={{encodeURIComponent RequestUrl}}">Log Out</a>
 
 {{else}}

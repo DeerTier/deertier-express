@@ -16,7 +16,7 @@
 
     <link rel="Stylesheet" type="text/css" href="/stylesheets/reset.css" />
     <link rel="Stylesheet" type="text/css" href="/stylesheets/font-awesome.min.css" />
-    <link rel="Stylesheet" type="text/css" href="/stylesheets/styles.css?v=33" />
+    <link rel="Stylesheet" type="text/css" href="/stylesheets/styles.css?v=41" />
 
     <script type="text/javascript" src="/javascripts/jquery-3.3.1.min.js"></script>
     <script type="text/javascript" src="/javascripts/jquery.dataTables-1.10.16.min.js"></script>
@@ -43,13 +43,17 @@
       <div id="headerContainer">
         <div id="header">
           <div class="mainTitle"><a href="/">Deer Tier</a></div>
-          <div class="subtitle"><a href="/">Hall of Fame</a></div>
+          <div class="subtitle"><a href="/">{{Extension.Description}}</a></div>
         </div>
       </div>
 
       <div id="wrapper">
         <div class="leftNav">
-          {{> mainCategories MainCategories }}
+          {{#if IsAdminPage }}
+            {{> adminPages AdminPages }}
+          {{else}}
+            {{> mainCategories MainCategories }}
+          {{/if}}
         </div>
     
         <div id="contentContainer">

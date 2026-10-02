@@ -1,0 +1,85 @@
+<div id="adminEdit">
+  <div class="addTimeTitle">
+    {{Title}}
+  </div>
+
+  <br />
+
+  <form method="post">
+    <div class="addTimeForm">
+      Leaderboard<br />
+      <select class="adminTextField" name="extensionId">
+        <option value="0">Unassigned</option>
+        {{#each Extensions}}
+          <option value="{{Id}}" {{#if (eq Id ../Category.ExtensionId)}}selected{{/if}}>{{Name}}</option>
+        {{/each}}
+      </select><br />
+
+      Name<br />
+      <input type="text" class="adminTextField" name="name" maxlength="200" value="{{Category.Name}}" /><br />
+
+      Short Name<br />
+      <input type="text" class="adminTextField" name="shortName" maxlength="200" value="{{Category.ShortName}}" /><br />
+
+      URL Name<br />
+      <input type="text" class="adminTextField" name="urlName" maxlength="200" value="{{Category.UrlName}}" /><br />
+
+      Parent Category<br />
+      <select class="adminTextField" name="parentId">
+        <option value="">None</option>
+        {{#each ParentGroups}}
+          <optgroup label="{{Name}}">
+            {{#each Options}}
+              <option value="{{Id}}" {{#if (eq Id @root.Category.ParentId)}}selected{{/if}}>{{Label}}</option>
+            {{/each}}
+          </optgroup>
+        {{/each}}
+      </select><br />
+
+      Section: (top level categories only, subcategories use their parent's)<br />
+      <select class="adminTextField" name="sectionId">
+        <option value="">None</option>
+        {{#each Sections}}
+          <option value="{{Id}}" {{#if (eq Id ../Category.SectionId)}}selected{{/if}}>{{Name}}</option>
+        {{/each}}
+      </select><br />
+
+      Visible<br />
+      <input type="checkbox" name="visible" value="1" {{#if Category.Visible}}checked{{/if}} /><br />
+
+      Display Order<br />
+      <input type="text" class="adminTextField" name="displayOrder" maxlength="100" value="{{Category.DisplayOrder}}" /><br />
+
+      Uses Game Time<br />
+      <input type="checkbox" name="gameTime" value="1" {{#if Category.GameTime}}checked{{/if}} /><br />
+
+      Uses Escape Time<br />
+      <input type="checkbox" name="escapeGameTime" value="1" {{#if Category.EscapeGameTime}}checked{{/if}} /><br />
+
+      Uses Real Time<br />
+      <input type="checkbox" name="realTime" value="1" {{#if Category.RealTime}}checked{{/if}} /><br />
+
+      Wiki Link<br />
+      <input type="text" class="adminTextField" name="wikiUrl" maxlength="200" value="{{Category.WikiUrl}}" /><br />
+
+      Note: (shown above the leaderboard, HTML allowed)<br />
+      <textarea class="adminTextField adminTextArea" name="note" maxlength="1000">{{Category.Note}}</textarea><br />
+
+      Enabled<br />
+      <input type="checkbox" name="enabled" value="1" {{#if Category.Enabled}}checked{{/if}} /><br />
+
+    </div>
+
+    <input class="genericButton" type="submit" value="Save" />
+  </form>
+
+  <p class="adminBackLink">
+    <a href="/admin/manageCategories">Back to Categories</a>
+  </p>
+
+  {{#if Message}}
+    <div class="statusLiteral">
+      {{Message}}
+    </div>
+  {{/if}}
+</div>

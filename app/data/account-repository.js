@@ -59,6 +59,18 @@ accountRepository.changePassword = async function(username, newPassword, passwor
   return false;
 };
 
+accountRepository.setAdministrator = async function(username, isAdministrator)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [result] = await connection.execute(
+      'UPDATE tblUsers SET IsAdministrator = :IsAdministrator WHERE Name = :Username',
+      { IsAdministrator: isAdministrator, Username: username });
+
+    return (result.affectedRows > 0);
+  });
+};
+
 accountRepository.getModerators = async function()
 {
   return await dbConnectionProvider.execute(async (connection) =>

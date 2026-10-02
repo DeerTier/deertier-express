@@ -15,7 +15,9 @@ logger.info('Starting application...');
 
 const handlebarsExtensions = require('./common/handlerbars-extensions');
 
+const requestOrigin = require('./middlewares/request-origin');
 const authentication = require('./middlewares/authentication');
+const extension = require('./middlewares/extension');
 const baseViewModel = require('./middlewares/base-view-model');
 
 const homeRouter = require('./routes/home-router');
@@ -52,8 +54,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// reject cross-site form posts
+app.use(requestOrigin.handleRequest);
+
 // user authentication
 app.use(authentication.authenticate);
+
+// extension leaderboard middleware
+app.use(extension.handleRequest);
 
 // base view model (adds common items to res.locals)
 app.use(baseViewModel.handleRequest);

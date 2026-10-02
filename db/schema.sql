@@ -23,7 +23,7 @@
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `refSections` (
-  `Id` int NOT NULL,
+  `Id` int NOT NULL AUTO_INCREMENT,
   `Name` varchar(200) NOT NULL,
   PRIMARY KEY (`Id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -53,6 +53,7 @@ CREATE TABLE `tblCategories` (
   `UrlName` varchar(200) DEFAULT NULL,
   `ParentId` int DEFAULT NULL,
   `SectionId` int DEFAULT NULL,
+  `ExtensionId` int NOT NULL DEFAULT '1',
   `AllowSubmission` tinyint(1) NOT NULL,
   `Visible` tinyint(1) NOT NULL,
   `DisplayOrder` int NOT NULL,
@@ -63,7 +64,23 @@ CREATE TABLE `tblCategories` (
   `Enabled` tinyint(1) NOT NULL,
   `WikiUrl` varchar(200) DEFAULT NULL,
   `Note` varchar(1000) DEFAULT NULL,
-  PRIMARY KEY (`Id`)
+  PRIMARY KEY (`Id`),
+  KEY `idx_tblCategories_ExtensionId` (`ExtensionId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tblExtensions`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tblExtensions` (
+  `Id` int NOT NULL AUTO_INCREMENT,
+  `Name` varchar(100) NOT NULL,
+  `Description` varchar(200) NOT NULL,
+  PRIMARY KEY (`Id`),
+  UNIQUE KEY `idx_tblExtensions_Name` (`Name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -150,6 +167,7 @@ CREATE TABLE `tblUsers` (
   `Password` varchar(100) NOT NULL,
   `PasswordType` tinyint unsigned NOT NULL,
   `IsModerator` tinyint unsigned NOT NULL,
+  `IsAdministrator` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`ID`),
   KEY `idx_tblUsers_IsModerator` (`IsModerator`),
   KEY `idx_tblUsers_Name` (`Name`)
@@ -179,5 +197,8 @@ LOCK TABLES `schema_migrations` WRITE;
 INSERT INTO `schema_migrations` (version) VALUES
   ('20261002190152'),
   ('20261002190354'),
-  ('20261002201055');
+  ('20261002201055'),
+  ('20261003120000'),
+  ('20261003130000'),
+  ('20261003140000');
 UNLOCK TABLES;
