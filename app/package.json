@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "node ./bin/www",
+    "dev": "node --watch-path=. ./bin/www",
+    "db:start": "docker compose -f ../docker-compose.yml up -d migrate",
+    "db:stop": "docker compose -f ../docker-compose.yml stop db",
+    "db": "dbmate --migrations-dir ../db/migrations --schema-file ../db/schema.sql",
+    "migrate": "dbmate --migrations-dir ../db/migrations --no-dump-schema up"
   },
   "dependencies": {
     "aspnet-identity-pw": "^1.0.2",
@@ -21,5 +26,8 @@
     "mysql2": "^3.15.3",
     "node-cache": "^5.1.2",
     "temporal-polyfill": "^0.3.0"
+  },
+  "devDependencies": {
+    "dbmate": "^2.36.0"
   }
 }

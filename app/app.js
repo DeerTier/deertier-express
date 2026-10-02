@@ -26,6 +26,11 @@ const adminRouter = require('./routes/admin-router');
 
 const app = express();
 
+if (process.env.TRUST_PROXY)
+{
+  app.set('trust proxy', process.env.TRUST_PROXY);
+}
+
 // handlebars setup
 hbs.registerPartials(__dirname + '/views/partials', function (err) {});
 handlebarsExtensions.register(hbs);

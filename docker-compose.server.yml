@@ -1,0 +1,72 @@
+services:
+  app:
+    # Lowercase owner/name; must match IMAGE in .github/workflows/deploy.yml
+    image: ghcr.io/deertier/deertier-express:${APP_TAG:?set APP_TAG in .env}
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-deertier}
+      DB_USER: ${DB_USER:-deertier}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      ADMIN_KEY: ${ADMIN_KEY:?set ADMIN_KEY in .env}
+      IS_PREVIEW_SITE: ${IS_PREVIEW_SITE:?set IS_PREVIEW_SITE in .env}
+      # Caddy reaches the app over the private Docker network, so trust
+      # X-Forwarded-For from private addresses to get the real client IP
+      TRUST_PROXY: ${TRUST_PROXY:-uniquelocal}
+    volumes:
+      - logs:/srv/logs
+      - web-content-backup:/srv/WebContentBackup
+    networks:
+      default:
+      # Shared with Caddy. The alias is what the Caddyfile points at:
+      # deertier-prod-app or deertier-dev-app.
+      web:
+        aliases:
+          - ${COMPOSE_PROJECT_NAME:?set COMPOSE_PROJECT_NAME in .env}-app
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    image: ghcr.io/deertier/deertier-express:${APP_TAG:?set APP_TAG in .env}
+    # --no-dump-schema: the image has no mysqldump, and schema.sql belongs to dev
+    command: ["dbmate", "--wait", "--no-dump-schema", "up"]
+    restart: "no"
+    environment:
+      DATABASE_URL: mysql://${DB_USER:-deertier}:${DB_PASSWORD:?set DB_PASSWORD in .env}@db:3306/${DB_DATABASE:-deertier}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-deertier}
+      MYSQL_USER: ${DB_USER:-deertier}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+    ports:
+      # Server-local only (prod 3306, dev 3307). From your own machine:
+      #   ssh -L 3306:127.0.0.1:3306 you@server
+      - "127.0.0.1:${DB_HOST_PORT:?set DB_HOST_PORT in .env}:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      # TCP (not the socket) so it stays unhealthy while MySQL initializes
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u\"$$MYSQL_USER\" -p\"$$MYSQL_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+networks:
+  web:
+    external: true
+
+volumes:
+  db-data:
+  logs:
+  web-content-backup:

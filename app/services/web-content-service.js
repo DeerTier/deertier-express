@@ -85,6 +85,7 @@ async function saveContentBackup(url, content)
   try
   {
     const backupFile = getBackupFilePath(url);
+    await fs.mkdir(config.webContentBackupPath, { recursive: true });
     await fs.writeFile(backupFile, content, { encoding: 'utf8', flag: 'w+' });
   }
   catch (ex)

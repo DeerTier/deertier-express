@@ -1,0 +1,22 @@
+.git
+.gitignore
+.vs
+.vscode
+Dockerfile
+.dockerignore
+README.md
+LICENSE
+.github
+deploy
+db/*
+!db/migrations
+
+**/node_modules
+**/npm-debug.log*
+
+# Secrets are passed at runtime (--env-file), never baked into the image
+**/.env
+**/.env.*
+
+logs
+WebContentBackup

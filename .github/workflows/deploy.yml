@@ -1,0 +1,72 @@
+# .github/workflows/deploy.yml
+#   Push to main        -> builds :main and deploys to the dev stack
+#   Publish a Release   -> builds :<tag> and deploys to the prod stack
+#   Run manually        -> redeploys main to dev
+#
+# Repo secrets needed:
+#   DEPLOY_HOST     server IP or hostname
+#   DEPLOY_SSH_KEY  private key whose public half is in /home/deploy/.ssh/authorized_keys
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # One deploy at a time per environment
+    concurrency: deploy-${{ github.event_name == 'release' && 'prod' || 'dev' }}
+    env:
+      # Lowercase owner/name; must match the image in docker-compose.server.yml
+      IMAGE: ghcr.io/deertier/deertier-express
+      TARGET: ${{ github.event_name == 'release' && 'prod' || 'dev' }}
+      TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || 'main' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE }}:${{ env.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to server
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+
+          # The repo is the source of truth for the stack definition
+          scp docker-compose.server.yml "deploy@$HOST:/opt/deertier/$TARGET/docker-compose.yml"
+
+          # Pin the version in that environment's .env, then pull and restart.
+          # "up" runs the migrate service first; the app only starts once
+          # migrations succeed. Old images are cleaned up afterwards.
+          ssh "deploy@$HOST" "cd /opt/deertier/$TARGET \
+            && sed -i 's/^APP_TAG=.*/APP_TAG=$TAG/' .env \
+            && docker compose pull app migrate \
+            && docker compose up -d --remove-orphans \
+            && docker image prune -f"
