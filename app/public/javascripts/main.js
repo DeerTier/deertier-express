@@ -12,10 +12,6 @@
     });
 
 
-    if ($('#scoreDeletionLog').length) {
-        $('#scoreDeletionLog').DataTable();
-    }
-
     $('.navSectionExpander').on('click', function (e) {
         var $expander = $(e.target);
         var navSection = $expander.siblings('.navSectionContent')[0];

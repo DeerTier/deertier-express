@@ -28,6 +28,27 @@ accountRepository.getUser = async function(username)
   });
 };
 
+// Users with a role (moderators and administrators)
+accountRepository.getStaff = async function()
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [results] = await connection.execute(
+      'SELECT ID, Name, IsModerator, IsAdministrator FROM tblUsers WHERE IsModerator <> 0 OR IsAdministrator = 1 ORDER BY Name');
+    return results;
+  });
+};
+
+accountRepository.setUserRoles = async function(userId, moderatorType, isAdministrator)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    await connection.execute(
+      'UPDATE tblUsers SET IsModerator = :IsModerator, IsAdministrator = :IsAdministrator WHERE ID = :Id',
+      { IsModerator: moderatorType, IsAdministrator: isAdministrator ? 1 : 0, Id: userId });
+  });
+};
+
 accountRepository.addUser = async function(user)
 {
   return await dbConnectionProvider.execute(async (connection) =>
@@ -76,6 +97,15 @@ accountRepository.getModerators = async function()
   return await dbConnectionProvider.execute(async (connection) =>
   {
     const [results] = await connection.execute('SELECT Name FROM tblUsers WHERE IsModerator = 1');
+    return results?.map(r => r.Name);
+  });
+};
+
+accountRepository.getAdmins = async function()
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [results] = await connection.execute('SELECT Name FROM tblUsers WHERE IsAdministrator = 1');
     return results?.map(r => r.Name);
   });
 };

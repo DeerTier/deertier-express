@@ -1,0 +1,9 @@
+{{!-- Category cell of record tables that list several categories: the section (and the board, if it isn't the
+main one) above the category name --}}
+<td class="recordCategory">
+  <div class="recordSection">
+    {{#if BoardName}}<span class="timingLabel">{{BoardName}}</span>{{/if}}
+    {{SectionName}}
+  </div>
+  {{CategoryName}}
+</td>

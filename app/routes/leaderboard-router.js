@@ -2,6 +2,7 @@ const express = require('express');
 const utils = require('../common/utils');
 const recordUtil = require('../common/record-util');
 const ModeratorType = require('../common/moderator-type');
+const RecordStatus = require('../common/record-status');
 const authentication = require('../middlewares/authentication');
 const categoryService = require('../services/category-service');
 const leaderboardService = require('../services/leaderboard-service');
@@ -47,29 +48,8 @@ router.get('/:categoryUrlName', async function(req, res)
     viewModel.Heading = category.Name;
   }
 
-  const records = await leaderboardService.getRecords(category.Id, viewModel.HideRecordsWithoutVideo);
-  let rankedRecords = [];
-
-  if (category.GameTime && category.RealTime)
-  {
-    records.sort((a, b) => (a.GameTimeSeconds - b.GameTimeSeconds) || (a.RealTimeSeconds - b.RealTimeSeconds) || (a.DateSubmitted - b.DateSubmitted));
-    rankedRecords = rankRecords(records, r => `${r.GameTimeSeconds}|${r.RealTimeSeconds}`);
-  }
-  else if (category.GameTime)
-  {
-    records.sort((a, b) => (a.GameTimeSeconds - b.GameTimeSeconds) || (a.DateSubmitted - b.DateSubmitted));
-    rankedRecords = rankRecords(records, r => r.GameTimeSeconds);
-  }
-  else if (category.EscapeGameTime)
-  {
-    records.sort((a, b) => (b.CeresTime - a.CeresTime) || (a.DateSubmitted - b.DateSubmitted));
-    rankedRecords = rankRecords(records, r => r.CeresTime);
-  }
-  else
-  {
-    records.sort((a, b) => (a.RealTimeSeconds - b.RealTimeSeconds) || (a.DateSubmitted - b.DateSubmitted));
-    rankedRecords = rankRecords(records, r => r.RealTimeSeconds);
-  }
+  const records = await leaderboardService.getRecords(category, viewModel.HideRecordsWithoutVideo);
+  const rankedRecords = rankRecords(records, r => recordUtil.getRankKey(category, r));
 
   viewModel.Records = rankedRecords
     .map(r => mapRecord(r, category));
@@ -85,7 +65,7 @@ function rankRecords(records, recordRankKey)
     return records;
   }
 
-  const rankedRecords = records.map(r =>  
+  const rankedRecords = records.map(r =>
   ({
     Record: r,
     Rank: 1
@@ -126,11 +106,11 @@ function mapRecord(rankedRecord, category)
     GameTimeSeconds: record.GameTimeSeconds,
     Comment: record.Comment,
     VideoURL: record.VideoURL,
-    VideoURLAsLink: formatVideoURLAsLink(record.VideoURL),
+    VideoURLAsLink: recordUtil.formatVideoURLAsLink(record.VideoURL),
     CeresTime: record.CeresTime,
     DateSubmitted: record.DateSubmitted,
-    DateSubmittedAsString: formatDateSubmitted(record.DateSubmitted),
-    DateSubmittedSortOrder: getDateSubmittedSortOrder(record.DateSubmitted),
+    DateSubmittedAsString: recordUtil.formatDateSubmitted(record.DateSubmitted),
+    DateSubmittedSortOrder: recordUtil.getDateSubmittedSortOrder(record.DateSubmitted),
     Rank: rankedRecord.Rank,
     RankClass: getRankClass(rankedRecord.Rank)
   };
@@ -150,67 +130,9 @@ function mapRecord(rankedRecord, category)
     recordModel.FormattedEscapeGameTime = recordUtil.getFormattedEscapeGameTime(record.CeresTime);
   }
 
-  if (!utils.isNullOrWhitespace(record.Comment))
-  {
-    recordModel.HtmlComment = utils.escapeHtml(record.Comment)
-      .replaceAll('FrankerZ', '<img src="/images/FrankerZ.png"/>');
-  }
+  recordModel.HtmlComment = recordUtil.formatCommentAsHtml(record.Comment);
 
   return recordModel;
-}
-
-function formatVideoURLAsLink(videoURL)
-{
-  if (!videoURL)
-    return '';
-
-  let url = videoURL.trim();
-  if (!url)
-    return '';
-
-  if (!url.startsWith('http://') &&
-    !url.startsWith('https://') &&
-    !url.startsWith('//'))
-  {
-    url = 'http://' + url;
-  }
-
-  let icon = 'fa-video-camera';
-
-  try
-  {
-    const parsedUrl = new URL(url);
-    const host = parsedUrl.hostname.toLowerCase();
-    if (host.endsWith('twitch.tv'))
-    {
-      icon = 'fa-twitch';
-    }
-    else if (host.endsWith('youtube.com') || host.endsWith('youtu.be'))
-    {
-      icon = 'fa-youtube-play';
-    }
-  }
-  catch (ex) { }
-
-  return `<a href="${utils.escapeHtml(url)}" target="_blank"><i class="fa ${icon}" aria-hidden="true"></i></a>`;
-}
-
-function formatDateSubmitted(dateSubmitted)
-{
-  if (dateSubmitted)
-  {
-    const year = dateSubmitted.getFullYear();
-    const month = dateSubmitted.getMonth() + 1;
-    const day = dateSubmitted.getDate();
-    return `${year}-${utils.formatTimeComponent(month)}-${utils.formatTimeComponent(day)}`;
-  }
-  
-  return '';
-}
-
-function getDateSubmittedSortOrder(dateSubmitted)
-{
-  return (dateSubmitted ? dateSubmitted.valueOf() : 0);
 }
 
 function getRankClass(rank)
@@ -239,7 +161,7 @@ router.get('/:categoryUrlName/submit', authentication.authorize, async function(
   {
     return res.sendStatus(404);
   }
-  
+
   await renderSubmitTimeView(res, category);
 });
 
@@ -266,9 +188,10 @@ router.post('/:categoryUrlName/submit', authentication.authorize, async function
   const userContext = await accountService.getUserContext(req);
   let isModeratorAction = false;
 
-  if (userContext.user.IsModerator && !utils.isNullOrWhitespace(username))
+  // Auto-approve runs a moderator submits for someone else.
+  if (userContext.user.IsModerator && !utils.isNullOrWhitespace(username)
+    && username.trim().toLowerCase() !== userContext.user.Name.toLowerCase())
   {
-    // Allow moderators to submit for any username
     username = username.trim();
     isModeratorAction = true;
 
@@ -285,12 +208,15 @@ router.post('/:categoryUrlName/submit', authentication.authorize, async function
     return renderSubmitTimeView(res, category, 'Invalid time');
   }
 
+  record.Status = await leaderboardService.getNewRecordStatus(category, record, isModeratorAction);
+
   await leaderboardService.addRecord(userContext, record, isModeratorAction);
 
   logger.debug(`Record submitted: [${categoryUrlName}], [${gameTime ?? ''}], [${escapeGameTime ?? ''}], [${realTime ?? ''}], [${videoLink}], [${comment}]`);
 
   const viewModel = {};
   viewModel.Title = 'Success';
+  viewModel.IsPending = record.Status === RecordStatus.Pending;
   res.render('leaderboard/submitSuccess', viewModel);
 });
 
@@ -309,9 +235,9 @@ async function renderSubmitTimeView(res, category, errorMessage)
 // Moderator delete record
 // ----------------------------------------------------------------------------
 
-router.get('/:categoryUrlName/moderatorDeleteRecord', authentication.authorize, async function(req, res)
+router.post('/:categoryUrlName/moderatorDeleteRecord', authentication.authorize, async function(req, res)
 {
-  const idParam = req.query.id;
+  const idParam = req.body.id;
 
   const userContext = await accountService.getUserContext(req);
   const isModerator = userContext.user.IsModerator != ModeratorType.NotModerator;
@@ -336,14 +262,14 @@ router.get('/:categoryUrlName/moderatorDeleteRecord', authentication.authorize, 
     return res.sendStatus(404);
   }
 
-  // Get category to ensure it's enabled and belongs to the current extension
+  // Get category to make sure it's enabled and belongs to the current extension
   const category = await categoryService.getCategory(record.CategoryId);
   if (!category || category.ExtensionId !== res.locals.Extension.Id)
   {
     return res.sendStatus(403);
   }
 
-  if (!await leaderboardService.deleteRecord(userContext, record))
+  if (!await leaderboardService.deleteRecord(userContext, record, req.body.comment?.trim()))
   {
     logger.error(`Failed to delete record: [${id}], [${record.Player}], [${category.UrlName}]`);
     return res.send('error deleting record');

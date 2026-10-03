@@ -1,5 +1,6 @@
 const utils = require('../common/utils');
 const leaderboardRepository = require('../data/leaderboard-repository');
+const VerificationMode = require('../common/verification-mode');
 
 const categoryService = {};
 
@@ -94,6 +95,9 @@ async function validateCategory(category)
 {
   if (utils.isNullOrWhitespace(category.Name))
     throw new Error('Name is required.');
+
+  if (!Object.values(VerificationMode).includes(category.VerificationMode))
+    throw new Error('Choose a verification mode.');
 
   const allCategories = await leaderboardRepository.getAllCategories();
   const otherCategories = allCategories.filter(c => c.Id !== category.Id);
@@ -199,7 +203,24 @@ async function validateSection(section)
     throw new Error(`There's already a section called ${duplicate.Name}.`);
 }
 
-// Reload sections and categories from the database on next use (call after changing them)
+// Links categories to their section, parent and subcategories
+categoryService.linkCategories = function(categories, sections)
+{
+  for (const category of categories)
+  {
+    category.Section = sections.find(s => s.Id === category.SectionId);
+    category.Parent = categories.find(c => c.Id === category.ParentId);
+  }
+
+  for (const category of categories)
+  {
+    category.Subcategories = categories
+      .filter(c => c.Parent === category)
+      .toSorted((a, b) => a.DisplayOrder - b.DisplayOrder);
+  }
+};
+
+// Reload sections and categories from the database on next use
 categoryService.reset = function()
 {
   cacheVersion++;
@@ -223,25 +244,13 @@ async function initialize()
   categoriesById = {};
   categoriesByUrlName = {};
 
-  for (const category of categories)
-  {
-    if (category.SectionId !== null)
-    {
-      category.Section = sections.find(s => s.Id === category.SectionId);
-    }
-
-    if (category.ParentId !== null)
-    {
-      category.Parent = categories.find(c => c.Id === category.ParentId);
-    }
-  }
+  categoryService.linkCategories(categories, sections);
 
   // Subcategories of a disabled category aren't loaded with it, so they're disabled too
   categories = categories.filter(c => !c.ParentId || c.Parent);
 
   for (const category of categories)
   {
-    category.Subcategories = categories.filter(c => c.Parent === category).toSorted((a, b) => a.DisplayOrder - b.DisplayOrder);
     // A group links to its first visible subcategory (hidden ones are only reachable by direct link)
     category.DefaultSubcategory = category.Subcategories.find(c => c.Visible);
   }

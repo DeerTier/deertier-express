@@ -55,6 +55,7 @@ CREATE TABLE `tblCategories` (
   `SectionId` int DEFAULT NULL,
   `ExtensionId` int NOT NULL DEFAULT '1',
   `AllowSubmission` tinyint(1) NOT NULL,
+  `VerificationMode` enum('All','None') NOT NULL DEFAULT 'All',
   `Visible` tinyint(1) NOT NULL,
   `DisplayOrder` int NOT NULL,
   `GameTime` tinyint(1) NOT NULL,
@@ -95,6 +96,7 @@ CREATE TABLE `tblModerationLog` (
   `UserId` int NOT NULL,
   `Action` tinyint unsigned NOT NULL,
   `Description` varchar(1000) DEFAULT NULL,
+  `Reason` varchar(1000) DEFAULT NULL,
   `RelatedId1` int DEFAULT NULL,
   `RelatedId2` int DEFAULT NULL,
   `RelatedId3` int DEFAULT NULL,
@@ -102,32 +104,6 @@ CREATE TABLE `tblModerationLog` (
   `IPAddress` varchar(100) NOT NULL,
   `UserAgent` varchar(1000) NOT NULL,
   PRIMARY KEY (`Id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `tblRecordDeletionLog`
---
-
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8mb4 */;
-CREATE TABLE `tblRecordDeletionLog` (
-  `ID` int NOT NULL AUTO_INCREMENT,
-  `Moderator` varchar(100) NOT NULL,
-  `DeletionDate` datetime(6) DEFAULT NULL,
-  `CategoryId` int NOT NULL,
-  `Player` varchar(100) NOT NULL,
-  `RealTimeString` varchar(100) NOT NULL,
-  `GameTimeString` varchar(100) DEFAULT NULL,
-  `RealTimeSeconds` int NOT NULL,
-  `GameTimeSeconds` int DEFAULT NULL,
-  `Comment` varchar(100) DEFAULT NULL,
-  `VideoURL` varchar(100) DEFAULT NULL,
-  `CeresTime` decimal(4,2) DEFAULT NULL,
-  `DateSubmitted` datetime(6) DEFAULT NULL,
-  `SubmittedByUserId` int DEFAULT NULL,
-  `IPAddress` varchar(100) NOT NULL,
-  PRIMARY KEY (`ID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -150,8 +126,13 @@ CREATE TABLE `tblRecords` (
   `CeresTime` decimal(4,2) DEFAULT NULL,
   `DateSubmitted` datetime(6) DEFAULT NULL,
   `SubmittedByUserId` int DEFAULT NULL,
+  `Status` enum('Pending','Approved','Rejected','Deleted') NOT NULL DEFAULT 'Pending',
+  `StatusComment` varchar(1000) DEFAULT NULL,
+  `StatusChangedByUserId` int DEFAULT NULL,
+  `StatusChangedAt` datetime(6) DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  KEY `idx_tblRecords_CategoryId` (`CategoryId`)
+  KEY `idx_tblRecords_CategoryId` (`CategoryId`),
+  KEY `idx_tblRecords_Status` (`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -200,5 +181,6 @@ INSERT INTO `schema_migrations` (version) VALUES
   ('20261002201055'),
   ('20261003120000'),
   ('20261003130000'),
-  ('20261003140000');
+  ('20261003140000'),
+  ('20261003150000');
 UNLOCK TABLES;

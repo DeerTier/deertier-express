@@ -15,4 +15,19 @@ moderationRepository.logModerationAction = async function(moderationAction)
   });
 };
 
+// Newest first, with the moderator's name
+moderationRepository.getModerationLog = async function(limit)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [entries] = await connection.query(
+      'SELECT m.Id, m.Action, m.Description, m.Reason, m.RelatedId1, m.Date, u.Name AS Moderator FROM tblModerationLog m '
+        + 'LEFT JOIN tblUsers u ON u.ID = m.UserId '
+        + 'ORDER BY m.Date DESC, m.Id DESC LIMIT ?',
+      [ limit ]);
+
+    return entries;
+  });
+};
+
 module.exports = moderationRepository;

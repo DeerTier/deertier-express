@@ -1,8 +1,12 @@
 const utils = require('../common/utils');
 const leaderboardRepository = require('../data/leaderboard-repository');
 const extensionService = require('./extension-service');
+const categoryService = require('./category-service');
+const leaderboardService = require('./leaderboard-service');
+const moderationService = require('./moderation-service');
+const recordUtil = require('../common/record-util');
 
-const adminService = {}; 
+const adminService = {};
 
 adminService.getAdminPages = async function(res)
 {
@@ -13,21 +17,39 @@ adminService.getAdminPages = async function(res)
     // Pages visible only to administrators
     if (res.locals.IsAdministrator)
     {
-        adminPages = [...adminPages, 
+        adminPages = [...adminPages,
             { Name: 'Manage Extensions', PageUrl: '/Admin/ManageExtensions' },
             { Name: 'Manage Sections', PageUrl: '/Admin/ManageSections' },
-            { Name: 'Manage Categories', PageUrl: '/Admin/ManageCategories' }
+            { Name: 'Manage Categories', PageUrl: '/Admin/ManageCategories' },
+            { Name: 'Manage Users', PageUrl: '/Admin/ManageUsers' }
         ];
     }
 
     // Pages visible to moderators as well as administrators
     if (res.locals.IsModerator || res.locals.IsAdministrator)
     {
-        adminPages = [...adminPages];
+        adminPages = [...adminPages,
+            { Name: 'Moderation Queue', PageUrl: '/Admin/ModerationQueue' },
+            { Name: 'Moderation Log', PageUrl: '/Admin/ModerationLog' }
+        ];
     }
 
     return adminPages;
 }
+
+// The latest moderation actions, newest first
+adminService.getModerationLog = async function(limit)
+{
+    const entries = await moderationService.getModerationLog(limit);
+    const records = await leaderboardRepository.getRecordsByIds([ ...new Set(entries.map(e => e.RecordId).filter(Boolean)) ]);
+    const recordModels = await leaderboardService.getRecordModels(records);
+
+    return entries.map(entry => ({
+        ...entry,
+        DateAsString: `${recordUtil.formatDateSubmitted(entry.Date)} ${utils.formatTimeComponent(entry.Date.getHours())}:${utils.formatTimeComponent(entry.Date.getMinutes())}`,
+        Record: recordModels.find(r => r.ID === entry.RecordId)
+    }));
+};
 
 // Categories of deleted extension boards are moved to this extension id
 const unassignedExtensionId = 0;
@@ -42,18 +64,7 @@ adminService.getCategoryTree = async function(selectedExtensionId)
     const sections = await leaderboardRepository.getSections();
     const categories = await leaderboardRepository.getAllCategories();
 
-    for (const category of categories)
-    {
-        category.Section = sections.find(s => s.Id === category.SectionId);
-        category.Parent = categories.find(c => c.Id === category.ParentId);
-    }
-
-    for (const category of categories)
-    {
-        category.Subcategories = categories
-            .filter(c => c.Parent === category)
-            .toSorted((a, b) => a.DisplayOrder - b.DisplayOrder);
-    }
+    categoryService.linkCategories(categories, sections);
 
     const extensionIds = extensions.map(e => e.Id);
     const getBoardId = c => extensionIds.includes(c.ExtensionId) ? c.ExtensionId : unassignedExtensionId;

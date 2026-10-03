@@ -90,9 +90,21 @@
   </div>
 
   <div class="mainPageSection">
-    <h2 class="title">Moderators</h2>
+    <h2 class="title">Admins and Moderators</h2>
     <br />
-
-    Your moderators are <b>{{{FormattedModerators}}}</b>. If you have any questions about the times you or anyone else has submitted, please feel free to contact any of them in the #supermetroid channel on our <a href="{{DiscordUrl}}" target="_blank" class="link">Discord</a> server.
+    {{#if FormattedAdmins}}
+    <p>
+      Your admins are <b>{{{FormattedAdmins}}}</b>.
+    </p>
+    {{/if}}
+    {{#if FormattedModerators}}
+    <p>
+      Your moderators are <b>{{{FormattedModerators}}}</b>.
+    </p>
+    {{/if}}
+    <br />
+    <p>
+      If you have any questions about the times you or anyone else has submitted, please feel free to contact any of them in the #supermetroid channel on our <a href="{{DiscordUrl}}" target="_blank" class="link">Discord</a> server.
+    </p>
   </div>
 </div>
