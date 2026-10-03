@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 
 # Additional project-specific ignores
 **/WebContentBackup/*
+
+# Local development scripts and seed data (not committed)
+db/dev/

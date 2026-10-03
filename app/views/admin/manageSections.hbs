@@ -1,0 +1,72 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Sections</h1>
+    <h2>{{Sections.length}} total</h2>
+  </div>
+
+  <div class="submitButtonContainer">
+    <a class="genericButton" href="/admin/manageSections/add">Add Section</a>
+  </div>
+</div>
+
+<div class="categoryNote">
+  Sections group the top level categories in the side menu, e.g. No Major Glitches. They're shared by all extension boards,
+  and a section only shows in a board's menu when that board has visible categories in it.
+</div>
+
+<div class="scoreTable">
+  <table class="defaultTable">
+    <thead>
+      <tr>
+        <th class="idColumn sorting_asc">
+          Id
+        </th>
+        <th class="descriptionColumn">
+          Name
+        </th>
+        <th class="categoryCountColumn">
+          Categories
+        </th>
+        <th class="editColumn nosort">
+          Edit
+        </th>
+        <th class="moderatorDeleteColumn nosort">
+          Delete
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Sections}}
+        <tr>
+          <td>
+            {{Id}}
+          </td>
+          <td class="description">
+            {{Name}}
+          </td>
+          <td>
+            {{CategoryCount}}
+          </td>
+          <td class="videoLink">
+            <a href="/admin/manageSections/edit/{{encodeURIComponent Id}}" title="Edit"><i class="fa fa-pencil"></i></a>
+          </td>
+          <td class="delete">
+            {{#unless CategoryCount}}
+              <form method="post" action="/admin/manageSections/delete/{{encodeURIComponent Id}}"
+                data-confirm="Are you sure you want to remove the section {{Name}}?" onsubmit="return confirm(this.dataset.confirm);">
+                <button type="submit" title="Delete">&#10005;</button>
+              </form>
+            {{/unless}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+{{#if Message}}
+  <div class="statusLiteral">
+    {{Message}}
+  </div>
+{{/if}}

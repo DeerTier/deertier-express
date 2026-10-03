@@ -15,7 +15,7 @@ const router = express.Router();
 
 router.get('/:categoryUrlName', async function(req, res)
 {
-  const category = await categoryService.getCategoryByUrlName(req.params.categoryUrlName);
+  const category = await categoryService.getCategoryByUrlName(req.params.categoryUrlName, res.locals.Extension.Id);
 
   if (!category)
   {
@@ -31,17 +31,19 @@ router.get('/:categoryUrlName', async function(req, res)
 
   if (category.Parent)
   {
-    viewModel.SectionHeading = category.Parent.Section.Name;
+    viewModel.SectionHeading = category.Parent.Section?.Name;
     viewModel.Heading = category.Parent.Name;
 
+    // Hidden subcategories are only reachable by direct link, so they only get a tab while viewing them
     viewModel.SiblingCategories = await Promise.all(
       category.Parent.Subcategories
+        .filter(c => c.Visible || c === category)
         .map(async c => await categoryService.getCategoryModel(c.Id))
     );
   }
   else
   {
-    viewModel.SectionHeading = category.Section.Name;
+    viewModel.SectionHeading = category.Section?.Name;
     viewModel.Heading = category.Name;
   }
 
@@ -231,7 +233,7 @@ function getRankClass(rank)
 
 router.get('/:categoryUrlName/submit', authentication.authorize, async function(req, res)
 {
-  const category = await categoryService.getCategoryByUrlName(req.params.categoryUrlName);
+  const category = await categoryService.getCategoryByUrlName(req.params.categoryUrlName, res.locals.Extension.Id);
 
   if (!category)
   {
@@ -244,7 +246,7 @@ router.get('/:categoryUrlName/submit', authentication.authorize, async function(
 router.post('/:categoryUrlName/submit', authentication.authorize, async function(req, res)
 {
   const categoryUrlName = req.params.categoryUrlName;
-  const category = await categoryService.getCategoryByUrlName(categoryUrlName);
+  const category = await categoryService.getCategoryByUrlName(categoryUrlName, res.locals.Extension.Id);
 
   if (!category)
   {
@@ -334,9 +336,9 @@ router.get('/:categoryUrlName/moderatorDeleteRecord', authentication.authorize, 
     return res.sendStatus(404);
   }
 
-  // Get category to ensure it's enabled
+  // Get category to ensure it's enabled and belongs to the current extension
   const category = await categoryService.getCategory(record.CategoryId);
-  if (!category)
+  if (!category || category.ExtensionId !== res.locals.Extension.Id)
   {
     return res.sendStatus(403);
   }

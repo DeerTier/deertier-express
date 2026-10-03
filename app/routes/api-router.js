@@ -13,18 +13,18 @@ router.get('/records', async function(req, res, next)
   const records = await leaderboardService.getAllRecords();
 
   const formattedRecords = (await Promise.all(
-      records.map(async r => await mapRecord(r))
+      records.map(async r => await mapRecord(r, res.locals.Extension.Id))
     ))
     .filter(r => r != null);
 
   res.json(formattedRecords);
 });
 
-async function mapRecord(record)
+async function mapRecord(record, extensionId)
 {
   const category = await categoryService.getCategory(record.CategoryId);
 
-  if (category == null)
+  if (category == null || category.ExtensionId !== extensionId)
   {
     return null;
   }

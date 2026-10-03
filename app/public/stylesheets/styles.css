@@ -948,3 +948,222 @@ textarea
     font-style: italic;
     color: Silver;
 }
+
+/* Admin pages */
+
+.idColumn { width: 50px; }
+.extensionNameColumn { width: 170px; }
+.editColumn { width: 50px; }
+
+.extensionNameColumn,
+.extensionName,
+.descriptionColumn,
+.description
+{
+    text-align: left;
+}
+
+.defaultLabel
+{
+    color: #999;
+}
+
+.delete button
+{
+    font: inherit;
+    color: Red;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.delete button:hover
+{
+    color: White;
+}
+
+#adminEdit
+{
+    text-align: center;
+}
+
+.adminTextField
+{
+    width: 400px;
+    margin-bottom: 10px;
+}
+
+.adminTextArea
+{
+    height: 100px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.adminBackLink
+{
+    margin-top: 15px;
+}
+
+/* Category management tree */
+
+.categoryNameColumn { width: auto; }
+.urlNameColumn { width: 180px; }
+.timingColumn { width: 110px; }
+.flagColumn { width: 60px; }
+.orderColumn { width: 50px; }
+.categoryCountColumn { width: 100px; }
+
+.categoryNameColumn,
+.categoryName,
+.urlNameColumn,
+.urlName
+{
+    text-align: left;
+}
+
+.boardCategoryCount
+{
+    font-weight: normal;
+    color: #999;
+}
+
+/* Rows are grouped by parent instead of zebra striped */
+.categoryTree tbody tr:nth-child(odd)
+{
+    background-color: transparent;
+}
+
+.categoryTree td
+{
+    padding: 4px 5px;
+}
+
+.categoryTree tr.categorySectionRow,
+.categoryTree tr.categorySectionRow:hover
+{
+    background-color: #201333 !important;
+}
+
+.categorySectionRow td
+{
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: bold;
+    color: #FDC115;
+    border-top: 1px solid #5A3791;
+}
+
+.categoryTree tr.topCategoryRow
+{
+    background-color: #222;
+    border-top: 1px solid #331F52;
+}
+
+.topCategoryRow .categoryName
+{
+    font-weight: bold;
+    color: #EEEFF7;
+}
+
+.categoryMeta
+{
+    font-weight: normal;
+    color: #999;
+}
+
+.urlName
+{
+    color: #999;
+}
+
+/* Tree lines connecting subcategories to their parent */
+.subcategoryRow .categoryName
+{
+    position: relative;
+    padding-left: 40px;
+}
+
+.subcategoryRow .categoryName::before
+{
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid #5A3791;
+}
+
+.lastSubcategory .categoryName::before
+{
+    bottom: 50%;
+}
+
+.subcategoryRow .categoryName::after
+{
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    width: 14px;
+    border-top: 1px solid #5A3791;
+}
+
+.hiddenCategory td
+{
+    opacity: 0.45;
+}
+
+/* Disabled categories aren't loaded on the site at all, so they're dimmed more than hidden ones */
+.disabledCategory td:not(.categoryName)
+{
+    opacity: 0.3;
+}
+
+.disabledCategory .categoryName
+{
+    opacity: 1;
+    color: #777 !important;
+    text-decoration: line-through;
+}
+
+.statusLabel
+{
+    display: inline-block;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 8px;
+    background-color: #B8000055;
+    color: #FF9090;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+.timingLabel
+{
+    display: inline-block;
+    margin: 1px 0;
+    padding: 0 6px;
+    border-radius: 8px;
+    background-color: #5B379166;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.flagOn
+{
+    color: #8B54DE;
+}
+
+.flagOff
+{
+    color: #555;
+}
+
+.emptyTree
+{
+    padding: 20px !important;
+    font-style: italic;
+    color: #999;
+}

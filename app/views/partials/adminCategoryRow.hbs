@@ -1,0 +1,47 @@
+{{!-- One row of the category tree on the category management page (top level category or subcategory) --}}
+<tr class="{{#if IsSubcategory}}subcategoryRow{{#if IsLast}} lastSubcategory{{/if}}{{else}}topCategoryRow{{/if}}{{#unless Visible}} hiddenCategory{{/unless}}{{#unless Enabled}} disabledCategory{{/unless}}{{#if IsParentDisabled}} disabledCategory{{/if}}">
+  <td>
+    {{Id}}
+  </td>
+  <td class="categoryName">
+    {{Name}}
+    {{#if ShortName}}
+      <span class="categoryMeta">({{ShortName}})</span>
+    {{/if}}
+    {{#if IsGroup}}
+      <span class="categoryMeta">&middot; {{Subcategories.length}} subcategories</span>
+    {{/if}}
+    {{#unless Enabled}}
+      <span class="statusLabel">disabled</span>
+    {{else if IsParentDisabled}}
+      <span class="statusLabel" title="Enabled, but not shown because its parent category is disabled">parent disabled</span>
+    {{/unless}}
+  </td>
+  <td class="urlName">
+    {{UrlName}}
+  </td>
+  <td class="timing">
+    {{#each Timing}}
+      <span class="timingLabel">{{this}}</span>
+    {{/each}}
+  </td>
+  <td>
+    {{#if Enabled}}<i class="fa fa-check flagOn"></i>{{else}}<span class="flagOff">&ndash;</span>{{/if}}
+  </td>
+  <td>
+    {{#if Visible}}<i class="fa fa-check flagOn"></i>{{else}}<span class="flagOff">&ndash;</span>{{/if}}
+  </td>
+  <td>
+    {{DisplayOrder}}
+  </td>
+  <td class="videoLink">
+    <a href="/admin/manageCategories/edit/{{encodeURIComponent Id}}" title="Edit"><i class="fa fa-pencil"></i></a>
+  </td>
+  <td class="delete">
+    <form method="post" action="/admin/manageCategories/delete/{{encodeURIComponent Id}}"
+      data-confirm="Are you sure you want to remove the category {{Name}}?{{#if IsGroup}} It has {{Subcategories.length}} subcategories.{{/if}}"
+      onsubmit="return confirm(this.dataset.confirm);">
+      <button type="submit" title="Delete">&#10005;</button>
+    </form>
+  </td>
+</tr>

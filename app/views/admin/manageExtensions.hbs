@@ -1,0 +1,75 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Extension Boards</h1>
+    <h2>{{Extensions.length}} total</h2>
+  </div>
+
+  <div class="submitButtonContainer">
+    <a class="genericButton" href="/admin/manageExtensions/add">Add Extension Board</a>
+  </div>
+</div>
+
+<div class="categoryNote">
+  Each extension board is a separate set of categories, selected by the leftmost part of the host name,
+  e.g. "ext" in ext.deertier.com. The description is shown as the subtitle in the site header.
+</div>
+
+<div class="scoreTable">
+  <table class="defaultTable">
+    <thead>
+      <tr>
+        <th class="idColumn sorting_asc">
+          Id
+        </th>
+        <th class="extensionNameColumn">
+          Subdomain
+        </th>
+        <th class="descriptionColumn">
+          Description
+        </th>
+        <th class="editColumn nosort">
+          Edit
+        </th>
+        <th class="moderatorDeleteColumn nosort">
+          Delete
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Extensions}}
+        <tr>
+          <td>
+            {{Id}}
+          </td>
+          <td class="extensionName">
+            {{Name}}
+            {{#if IsDefault}}
+              <span class="defaultLabel">(default)</span>
+            {{/if}}
+          </td>
+          <td class="description">
+            {{Description}}
+          </td>
+          <td class="videoLink">
+            <a href="/admin/manageExtensions/edit/{{encodeURIComponent Id}}" title="Edit"><i class="fa fa-pencil"></i></a>
+          </td>
+          <td class="delete">
+            {{#unless IsDefault}}
+              <form method="post" action="/admin/manageExtensions/delete/{{encodeURIComponent Id}}"
+                data-confirm="Are you sure you want to remove the extension board {{Name}}? Deleting an extension board will move all the associated categories to be unassigned." onsubmit="return confirm(this.dataset.confirm);">
+                <button type="submit" title="Delete">&#10005;</button>
+              </form>
+            {{/unless}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+{{#if Message}}
+  <div class="statusLiteral">
+    {{Message}}
+  </div>
+{{/if}}

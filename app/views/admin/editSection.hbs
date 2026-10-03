@@ -1,0 +1,26 @@
+<div id="adminEdit">
+  <div class="addTimeTitle">
+    {{Title}}
+  </div>
+
+  <br />
+
+  <form method="post">
+    <div class="addTimeForm">
+      Section name<br />
+      <input type="text" class="adminTextField" name="name" maxlength="200" value="{{Section.Name}}" /><br />
+    </div>
+
+    <input class="genericButton" type="submit" value="Save" />
+  </form>
+
+  <p class="adminBackLink">
+    <a href="/admin/manageSections">Back to Sections</a>
+  </p>
+
+  {{#if Message}}
+    <div class="statusLiteral">
+      {{Message}}
+    </div>
+  {{/if}}
+</div>
