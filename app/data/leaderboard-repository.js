@@ -1,5 +1,5 @@
-const config = require('../config/config');
 const dbConnectionProvider = require('./db-connection-provider');
+const RecordStatus = require('../common/record-status');
 
 const leaderboardRepository = {};
 
@@ -104,7 +104,7 @@ leaderboardRepository.addCategory = async function(category)
     throw new Error('Invalid category');
 
   return await dbConnectionProvider.execute(async (connection) =>
-  {    
+  {
     const [result] = await connection.query(
       'INSERT INTO tblCategories SET ?',
       [ category ]);
@@ -143,8 +143,14 @@ leaderboardRepository.deleteCategory = async function(categoryId)
     throw new Error('Category not found.');
 
   // Only allow deletion if the category is not associated with any records
-  const records = await leaderboardRepository.getRecords(categoryId, false);
-  if (records.length > 0)
+  const recordCount = await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [results] = await connection.execute(
+      'SELECT COUNT(*) AS Count FROM tblRecords WHERE CategoryId = :CategoryId',
+      { CategoryId: categoryId });
+    return results[0].Count;
+  });
+  if (recordCount > 0)
     throw new Error('Cannot delete category with associated records. Set it to disabled instead.');
 
   return await dbConnectionProvider.execute(async (connection) =>
@@ -168,11 +174,26 @@ leaderboardRepository.getRecord = async function(id)
   });
 };
 
+leaderboardRepository.getRecordsByIds = async function(ids)
+{
+  if (ids.length === 0)
+    return [];
+
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [records] = await connection.query(
+      'SELECT * FROM tblRecords WHERE ID IN (?)',
+      [ ids ]);
+
+    return records;
+  });
+};
+
 leaderboardRepository.getRecords = async function(categoryId, excludeRecordsWithoutVideo)
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    let sql = 'SELECT * FROM tblRecords WHERE CategoryId = :CategoryId';
+    let sql = 'SELECT * FROM tblRecords WHERE CategoryId = :CategoryId AND Status = :Status';
     if (excludeRecordsWithoutVideo)
     {
       sql += ' AND VideoURL <> \'\'';
@@ -180,7 +201,7 @@ leaderboardRepository.getRecords = async function(categoryId, excludeRecordsWith
 
     const [records] = await connection.execute(
       sql,
-      { CategoryId: categoryId });
+      { CategoryId: categoryId, Status: RecordStatus.Approved });
     
     return records;
   });
@@ -189,7 +210,7 @@ leaderboardRepository.getRecords = async function(categoryId, excludeRecordsWith
 leaderboardRepository.addExtension = async function(extension)
 {
   return await dbConnectionProvider.execute(async (connection) =>
-  {    
+  {
     const [result] = await connection.query(
       'INSERT INTO tblExtensions SET ?',
       [ extension ]);
@@ -241,76 +262,74 @@ leaderboardRepository.addRecord = async function(record)
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    try
-    {
-      await connection.beginTransaction();
-    
-      // Delete existing record
-      await connection.execute(
-        'DELETE FROM tblRecords WHERE Player = :Player AND CategoryId = :CategoryId LIMIT 1',
-        { Player: record.Player, CategoryId: record.CategoryId });
-      
-      // Insert new record
-      const [result] = await connection.query(
-        'INSERT INTO tblRecords SET ?',
-        [ record ]);
+    const [result] = await connection.query(
+      'INSERT INTO tblRecords SET ?',
+      [ record ]);
 
-      await connection.commit();
-
-      // Get new record ID
-      record.ID = result.insertId;
-    } 
-    catch (error)
-    {
-      await connection.rollback();
-      throw error;
-    }
+    // Get new record ID
+    record.ID = result.insertId;
   });
 };
 
-leaderboardRepository.deleteRecord = async function(record, ipAddress, moderator)
+leaderboardRepository.approveRecord = async function(recordId, userId, comment)
+{
+  return await setRecordStatus(recordId, [ RecordStatus.Pending ], RecordStatus.Approved, userId, comment);
+};
+
+leaderboardRepository.rejectRecord = async function(recordId, userId, comment)
+{
+  return await setRecordStatus(recordId, [ RecordStatus.Pending ], RecordStatus.Rejected, userId, comment);
+};
+
+leaderboardRepository.deleteRecord = async function(recordId, userId, comment)
+{
+  return await setRecordStatus(recordId, [ RecordStatus.Pending, RecordStatus.Approved, RecordStatus.Rejected ], RecordStatus.Deleted, userId, comment);
+};
+
+// Changes the status of a record, but only if it currently has one of the given statuses. Returns whether it changed.
+async function setRecordStatus(recordId, fromStatuses, status, userId, comment)
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    try
-    {
-      await connection.beginTransaction();
-    
-      await connection.execute(
-        'DELETE FROM tblRecords WHERE ID = :Id LIMIT 1',
-        { Id: record.ID });
-      
-      await connection.query(
-        'INSERT INTO tblRecordDeletionLog SET ?',
-        [ { ...record, Moderator: moderator, DeletionDate: new Date(), IPAddress: ipAddress } ]);
+    const [result] = await connection.query(
+      'UPDATE tblRecords SET Status = ?, StatusComment = ?, StatusChangedByUserId = ?, StatusChangedAt = ? WHERE ID = ? AND Status IN (?)',
+      [ status, comment || null, userId, new Date(), recordId, fromStatuses ]);
 
-      await connection.commit();
-
-      return true;
-    } 
-    catch (error)
-    {
-      await connection.rollback();
-      return false;
-    }
+    return result.affectedRows === 1;
   });
-};  
+}
 
 leaderboardRepository.getAllRecords = async function()
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    const [records] = await connection.execute('SELECT * FROM tblRecords');
+    const [records] = await connection.execute(
+      'SELECT * FROM tblRecords WHERE Status = :Status',
+      { Status: RecordStatus.Approved });
     return records;
   });
 };
 
-leaderboardRepository.getAllDeletedRecords = async function()
+leaderboardRepository.getAllRecordsByUsername = async function(username)
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    const [results] = await connection.execute('SELECT * FROM tblRecordDeletionLog ORDER BY ID DESC');
-    return results;
+    const [records] = await connection.execute(
+      'SELECT * FROM tblRecords WHERE Player = :Player',
+      { Player: username });
+    return records;
+  });
+};
+
+leaderboardRepository.getAllPendingRecords = async function()
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [records] = await connection.execute(
+      // Oldest first, so the queue is handled in submission order
+      'SELECT * FROM tblRecords WHERE Status = :Status ORDER BY DateSubmitted, ID',
+      { Status: RecordStatus.Pending });
+    return records;
   });
 };
 

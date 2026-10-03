@@ -1,17 +1,22 @@
 const express = require('express');
 const createError = require('http-errors');
+const VerificationMode = require('../common/verification-mode');
+const ModeratorType = require('../common/moderator-type');
 const authentication = require('../middlewares/authentication');
 const leaderboardRepository = require('../data/leaderboard-repository');
 const leaderboardService = require('../services/leaderboard-service');
+const accountService = require('../services/account-service');
 const extensionService = require('../services/extension-service');
 const categoryService = require('../services/category-service');
 const adminService = require('../services/admin-service');
+const moderatorType = require('../common/moderator-type');
 
 const router = express.Router();
 
-router.get('/', authentication.authorizeAdmin, async function(req, res, next)
+router.get('/', authentication.authorizeModerator, async function(req, res, next)
 {
   const viewModel = {};
+  viewModel.Title = 'Admin';
   res.render('admin/index', viewModel);
 });
 
@@ -78,7 +83,7 @@ router.post('/manageExtensions/edit/:id', authentication.authorizeAdmin, async f
     renderEditExtension(res, 'Edit Extension Board', extension, error.message);
     return;
   }
-  
+
 });
 
 router.post('/manageExtensions/delete/:id', authentication.authorizeAdmin, async function(req, res, next)
@@ -186,6 +191,7 @@ router.get('/manageCategories/add', authentication.authorizeAdmin, async functio
     ShortName: '',
     UrlName: '',
     AllowSubmission: 1,
+    VerificationMode: VerificationMode.All,
     Visible: 1,
     DisplayOrder: 0,
     GameTime: 0,
@@ -276,9 +282,15 @@ function getCategoryFormValues(req)
     RealTime: req.body.realTime === '1' ? 1 : 0,
     WikiUrl: req.body.wikiUrl?.trim() || null,
     Note: req.body.note?.trim() || null,
-    Enabled: req.body.enabled === '1' ? 1 : 0
+    Enabled: req.body.enabled === '1' ? 1 : 0,
+    VerificationMode: req.body.verificationMode
   };
 }
+
+const verificationModeOptions = [
+  { Value: VerificationMode.All, Label: 'Verify all runs' },
+  { Value: VerificationMode.None, Label: 'No verification' }
+];
 
 async function renderEditCategory(res, title, category, message)
 {
@@ -312,6 +324,7 @@ async function renderEditCategory(res, title, category, message)
   viewModel.ParentGroups = parentGroups;
   viewModel.Sections = sections;
   viewModel.Extensions = extensions;
+  viewModel.VerificationModes = verificationModeOptions;
   res.render('admin/editCategory', viewModel);
 }
 
@@ -415,17 +428,131 @@ function renderEditSection(res, title, section, message)
   res.render('admin/editSection', viewModel);
 }
 
-
-// Score deletion log
+// Users
 // ----------------------------------------------------------------------------
-router.get('/scoreDeletionLog', authentication.authorizeAdmin, async function(req, res, next)
+router.get('/manageUsers', authentication.authorizeAdmin, async function(req, res, next)
 {
-  const records = await leaderboardService.getAllDeletedRecords();
+  const users = await accountService.getStaff();
 
   const viewModel = {};
-  viewModel.layout = null;    // Force no hbs layout
-  viewModel.Records = records;
-  res.render('admin/scoreDeletionLog', viewModel);
+  viewModel.Title = 'Users';
+  viewModel.Users = users.map(user => ({
+    Name: user.Name,
+    Roles: accountService.getRoleNames(user).join(', ')
+  }));
+  res.render('admin/manageUsers', viewModel);
 });
+
+// ?name= fills in the form with that user's current roles
+router.get('/manageUsers/edit', authentication.authorizeAdmin, async function(req, res, next)
+{
+  const name = req.query.name?.trim();
+  const user = name ? await accountService.getUser(name) : null;
+
+  const form = {
+    Name: user?.Name ?? name ?? '',
+    IsModerator: user?.IsModerator ?? ModeratorType.NotModerator,
+    IsAdministrator: user?.IsAdministrator ?? 0
+  };
+
+  renderEditUser(res, form, (name && !user) ? `User not found: ${name}` : null);
+});
+
+router.post('/manageUsers/edit', authentication.authorizeAdmin, async function(req, res, next)
+{
+  const form = {
+    Name: req.body.name?.trim(),
+    IsModerator: parseInt(req.body.moderator, 10) || ModeratorType.NotModerator,
+    IsAdministrator: req.body.administrator === '1' ? 1 : 0
+  };
+
+  const user = form.Name ? await accountService.getUser(form.Name) : null;
+  if (!user)
+  {
+    renderEditUser(res, form, form.Name ? `User not found: ${form.Name}` : 'Username is required.');
+    return;
+  }
+
+  try
+  {
+    const userContext = await accountService.getUserContext(req);
+    await accountService.setUserRoles(userContext, user, form.IsModerator, form.IsAdministrator === 1);
+  }
+  catch (error)
+  {
+    renderEditUser(res, form, error.message);
+    return;
+  }
+
+  res.redirect('/admin/manageUsers');
+});
+
+const moderatorOptions = [
+  { Value: ModeratorType.NotModerator, Label: 'None' },
+  { Value: ModeratorType.Moderator, Label: 'Moderator' },
+  { Value: ModeratorType.HiddenModerator, Label: 'Hidden moderator (not listed on the home page)' }
+];
+
+function renderEditUser(res, form, message)
+{
+  const viewModel = {};
+  viewModel.Title = 'Change User Roles';
+  viewModel.Message = message;
+  viewModel.User = form;
+  viewModel.ModeratorOptions = moderatorOptions;
+  res.render('admin/editUser', viewModel);
+}
+
+// Moderation log
+// ----------------------------------------------------------------------------
+
+const moderationLogLimit = 500;
+
+router.get('/moderationLog', authentication.authorizeModerator, async function(req, res, next)
+{
+  const viewModel = {};
+  viewModel.Title = 'Moderation Log';
+  viewModel.Entries = await adminService.getModerationLog(moderationLogLimit);
+  viewModel.Limit = moderationLogLimit;
+  res.render('admin/moderationLog', viewModel);
+});
+
+// Moderation Queue
+// ----------------------------------------------------------------------------
+router.get('/moderationQueue', authentication.authorizeModerator, async function(req, res, next)
+{
+  const records = await leaderboardService.getAllPendingRecords();
+
+  const viewModel = {};
+  viewModel.Title = 'Moderation Queue';
+  viewModel.Records = await leaderboardService.getRecordModels(records);
+  res.render('admin/moderationQueue', viewModel);
+});
+
+router.post('/moderationQueue/approve/:id', authentication.authorizeModerator, async function(req, res, next)
+{
+  await moderateRecord(req, res, next, leaderboardService.approveRecord);
+});
+
+router.post('/moderationQueue/reject/:id', authentication.authorizeModerator, async function(req, res, next)
+{
+  await moderateRecord(req, res, next, leaderboardService.rejectRecord);
+});
+
+async function moderateRecord(req, res, next, moderate)
+{
+  const record = await leaderboardService.getRecord(parseInt(req.params.id, 10));
+  if (!record)
+  {
+    next(createError(404));
+    return;
+  }
+
+  const userContext = await accountService.getUserContext(req);
+  await moderate(userContext, record, req.body.comment?.trim());
+
+  res.redirect('/admin/moderationQueue');
+}
+
 
 module.exports = router;

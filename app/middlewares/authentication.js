@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/config');
 const utils = require('../common/utils');
+const ModeratorType = require('../common/moderator-type');
 const accountService = require('../services/account-service');
 
 const authentication = {};
@@ -94,6 +95,25 @@ authentication.authorizeAdmin = async function(req, res, next)
   // Or a logged in administrator
   const user = await accountService.getAuthenticatedUser(req);
   if (user?.IsAdministrator)
+  {
+    next();
+  }
+  else if (!user)
+  {
+    const returnUrl = req.originalUrl;
+    res.redirect(`/account/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+  }
+  else
+  {
+    res.send('unauthorized access');
+  }
+};
+
+// A logged in moderator or administrator.
+authentication.authorizeModerator = async function(req, res, next)
+{
+  const user = await accountService.getAuthenticatedUser(req);
+  if (user && (user.IsModerator != ModeratorType.NotModerator || user.IsAdministrator))
   {
     next();
   }

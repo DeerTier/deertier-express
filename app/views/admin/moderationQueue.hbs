@@ -1,0 +1,82 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Moderation Queue</h1>
+    <h2>{{Records.length}} pending records in queue</h2>
+  </div>
+</div>
+
+<div class="categoryNote">
+  Records awaiting review and action by moderators.
+</div>
+
+<div class="scoreTable">
+  <table class="defaultTable">
+    <thead>
+      <tr>
+        <th class="dateSubmittedColumn sorting_asc">
+          Date
+        </th>
+        <th class="playerColumn">
+          Player
+        </th>
+        <th class="categoryColumn">
+          Category
+        </th>
+        <th class="gameTimeColumn">
+          Game Time
+        </th>
+        <th class="realTimeColumn">
+          Real Time
+        </th>
+        <th class="proofColumn nosort">
+          Video
+        </th>
+        <th class="commentColumn nosort">
+          Comment
+        </th>
+        <th class="moderationActionsColumn nosort">
+          Actions
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Records}}
+        <tr>
+          <td data-order="{{DateSubmittedSortOrder}}">
+            {{DateSubmittedAsString}}
+          </td>
+          <td class="playerName">
+            {{Player}}
+          </td>
+          {{> recordCategory }}
+          <td data-order="{{GameTimeSortOrder}}">
+            {{FormattedGameTime}}
+          </td>
+          <td data-order="{{RealTimeSeconds}}">
+            {{FormattedRealTime}}
+          </td>
+          <td class="videoLink">
+            {{{VideoURLAsLink}}}
+          </td>
+          <td class="comment">
+            {{{HtmlComment}}}
+          </td>
+          <td class="moderationActions">
+            <form method="post" action="/admin/moderationQueue/approve/{{ID}}"
+              data-confirm="Approve {{Player}}'s record in {{CategoryName}}?" onsubmit="return confirm(this.dataset.confirm);">
+              <button class="approve" type="submit" title="Approve">&#10003;</button>
+            </form>
+            {{!-- Cancelling the reason prompt cancels the rejection --}}
+            <form method="post" action="/admin/moderationQueue/reject/{{ID}}"
+              data-prompt="Reject {{Player}}'s record? Reason (optional, shown to the player):"
+              onsubmit="var reason = prompt(this.dataset.prompt); if (reason === null) return false; this.comment.value = reason; return true;">
+              <input type="hidden" name="comment" />
+              <button class="reject" type="submit" title="Reject">&#10005;</button>
+            </form>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

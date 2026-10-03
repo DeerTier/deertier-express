@@ -186,4 +186,111 @@ recordUtil.getFormattedEscapeGameTime = function(escapeGameTime)
   return escapeGameTime.replace('.', '\'');
 };
 
+// Orders records in a category the way the leaderboard ranks them, best first. Ties go to the earliest submission.
+recordUtil.compareRecords = function(category, a, b)
+{
+  if (category.GameTime && category.RealTime)
+  {
+    return (a.GameTimeSeconds - b.GameTimeSeconds) || (a.RealTimeSeconds - b.RealTimeSeconds) || (a.DateSubmitted - b.DateSubmitted);
+  }
+  else if (category.GameTime)
+  {
+    return (a.GameTimeSeconds - b.GameTimeSeconds) || (a.DateSubmitted - b.DateSubmitted);
+  }
+  else if (category.EscapeGameTime)
+  {
+    return (b.CeresTime - a.CeresTime) || (a.DateSubmitted - b.DateSubmitted);
+  }
+  else
+  {
+    return (a.RealTimeSeconds - b.RealTimeSeconds) || (a.DateSubmitted - b.DateSubmitted);
+  }
+};
+
+// Records with the same rank key share a rank on the leaderboard
+recordUtil.getRankKey = function(category, record)
+{
+  if (category.GameTime && category.RealTime)
+  {
+    return `${record.GameTimeSeconds}|${record.RealTimeSeconds}`;
+  }
+  else if (category.GameTime)
+  {
+    return record.GameTimeSeconds;
+  }
+  else if (category.EscapeGameTime)
+  {
+    return record.CeresTime;
+  }
+  else
+  {
+    return record.RealTimeSeconds;
+  }
+};
+
+// Comment as HTML: escaped, with the FrankerZ emote as an image
+recordUtil.formatCommentAsHtml = function(comment)
+{
+  if (utils.isNullOrWhitespace(comment))
+    return '';
+
+  return utils.escapeHtml(comment)
+    .replaceAll('FrankerZ', '<img src="/images/FrankerZ.png"/>');
+};
+
+// Video link as an icon link (Twitch, YouTube or a generic video icon)
+recordUtil.formatVideoURLAsLink = function(videoURL)
+{
+  if (!videoURL)
+    return '';
+
+  let url = videoURL.trim();
+  if (!url)
+    return '';
+
+  if (!url.startsWith('http://') &&
+    !url.startsWith('https://') &&
+    !url.startsWith('//'))
+  {
+    url = 'http://' + url;
+  }
+
+  let icon = 'fa-video-camera';
+
+  try
+  {
+    const parsedUrl = new URL(url);
+    const host = parsedUrl.hostname.toLowerCase();
+    if (host.endsWith('twitch.tv'))
+    {
+      icon = 'fa-twitch';
+    }
+    else if (host.endsWith('youtube.com') || host.endsWith('youtu.be'))
+    {
+      icon = 'fa-youtube-play';
+    }
+  }
+  catch (ex) { }
+
+  return `<a href="${utils.escapeHtml(url)}" target="_blank"><i class="fa ${icon}" aria-hidden="true"></i></a>`;
+};
+
+recordUtil.formatDateSubmitted = function(dateSubmitted)
+{
+  if (dateSubmitted)
+  {
+    const year = dateSubmitted.getFullYear();
+    const month = dateSubmitted.getMonth() + 1;
+    const day = dateSubmitted.getDate();
+    return `${year}-${utils.formatTimeComponent(month)}-${utils.formatTimeComponent(day)}`;
+  }
+
+  return '';
+};
+
+recordUtil.getDateSubmittedSortOrder = function(dateSubmitted)
+{
+  return (dateSubmitted ? dateSubmitted.valueOf() : 0);
+};
+
 module.exports = recordUtil;

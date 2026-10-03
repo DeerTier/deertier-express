@@ -1,0 +1,83 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Moderation Log</h1>
+    <h2>Latest {{Limit}} actions</h2>
+  </div>
+</div>
+
+<div class="categoryNote">
+  Moderation actions on records, newest first.
+</div>
+
+{{!-- Not a sortable defaultTable, so the log stays newest first --}}
+<div class="scoreTable">
+  <table>
+    <thead>
+      <tr>
+        <th class="logDateColumn">
+          Date
+        </th>
+        <th class="moderatorColumn">
+          Moderator
+        </th>
+        <th class="playerColumn">
+          Player
+        </th>
+        <th class="categoryColumn">
+          Category
+        </th>
+        <th class="gameTimeColumn">
+          Game Time
+        </th>
+        <th class="realTimeColumn">
+          Real Time
+        </th>
+        <th class="logActionColumn">
+          Action
+        </th>
+        <th class="commentColumn">
+          Reason
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Entries}}
+        <tr>
+          <td>
+            {{DateAsString}}
+          </td>
+          <td class="moderatorName">
+            {{Moderator}}
+          </td>
+          {{#with Record}}
+            <td class="playerName">
+              {{Player}}
+            </td>
+            {{> recordCategory }}
+            <td>
+              {{FormattedGameTime}}
+            </td>
+            <td>
+              {{FormattedRealTime}}
+            </td>
+          {{else}}
+            <td class="comment" colspan="4">
+              {{Description}}
+            </td>
+          {{/with}}
+          <td class="logAction">
+            {{ActionName}}
+          </td>
+          <td class="comment">
+            {{Reason}}
+          </td>
+        </tr>
+      {{else}}
+        <tr>
+          <td colspan="8">No moderation actions yet.</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
