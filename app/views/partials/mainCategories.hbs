@@ -1,13 +1,46 @@
 <div id="ntscNavSection" class="navSection">
   <div class="navSectionContent" style="display: block">
-    {{#each Sections}}
-      <h3>{{Name}}</h3>
-      <ul>
+    {{#if OpenSection}}
+      {{#each Sections}}
+        <h3 class="navSectionExpander">
+          {{Name}}
+          {{#if (eq ../OpenSection Name)}}
+            <span class="open"/>
+          {{else}}
+            <span/>
+          {{/if}}
+        </h3>
+        {{#if (eq ../OpenSection Name)}}
+          <ul class="open">
+        {{else}}
+          <ul>
+        {{/if}}
         {{#each Categories}}
           <li><a href="{{escapeHtmlAttribute LinkUrl}}">{{ShortName}}</a></li>
         {{/each}}
-      </ul>
-    {{/each}}
+        </ul>
+      {{/each}}
+    {{else}}
+      {{#each Sections}}
+        <h3 class="navSectionExpander">
+          {{Name}}
+          {{#if @first}}
+            <span class="open"/>
+          {{else}}
+            <span/>
+          {{/if}}
+        </h3>
+        {{#if @first}}
+          <ul class="open">
+        {{else}}
+          <ul>
+        {{/if}}
+        {{#each Categories}}
+          <li><a href="{{escapeHtmlAttribute LinkUrl}}">{{ShortName}}</a></li>
+        {{/each}}
+        </ul>
+      {{/each}}
+    {{/if}}
   </div>
 </div>
 
