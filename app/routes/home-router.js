@@ -10,32 +10,47 @@ const router = express.Router();
 // Homepage
 // ----------------------------------------------------------------------------
 
-router.get('/', async function(req, res, next)
+// Names as HTML, e.g. "a, b and c" (escaped, since usernames can contain any characters)
+function formatNames(names)
 {
-  const moderators = (await accountService.getModerators())
-    .sort(new Intl.Collator().compare);
+  names = names.map(utils.escapeHtml);
 
-  let moderatorsText = '';
-  for (let i = 0; i < moderators.length; i++)
+  let formattedText = '';
+  for (let i = 0; i < names.length; i++)
   {
-    if (i == moderators.length - 2)
+    if (i == names.length - 2)
     {
-      moderatorsText += moderators[i] + ' and ';
+      formattedText += names[i] + ' and ';
     }
-    else if (i == moderators.length - 1)
+    else if (i == names.length - 1)
     {
-      moderatorsText += moderators[i];
+      formattedText += names[i];
     }
     else
     {
-      moderatorsText += moderators[i] + ', ';
+      formattedText += names[i] + ', ';
     }
   }
+  return formattedText;
+}
+
+router.get('/', async function(req, res, next)
+{
+  const admins = (await accountService.getAdmins())
+    .sort(new Intl.Collator().compare);
+
+  const moderators = (await accountService.getModerators())
+    .sort(new Intl.Collator().compare)
+    .filter(name => !admins.includes(name));
+
+  let moderatorsText = formatNames(moderators);
+  let adminsText = formatNames(admins);
 
   const viewModel = {};
   viewModel.Title = 'Home';
   viewModel.EmbeddedHtmlContent = await getHomepageContent();
   viewModel.FormattedModerators = moderatorsText;
+  viewModel.FormattedAdmins = adminsText;
   viewModel.DiscordUrl = config.discordUrl;
 
   res.render('home/index', viewModel);

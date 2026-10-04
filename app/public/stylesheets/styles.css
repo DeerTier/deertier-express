@@ -1190,3 +1190,68 @@ textarea
     font-style: italic;
     color: #999;
 }
+
+/* Moderation queue */
+
+.moderationActionsColumn { width: 80px; }
+
+.categoryColumn,
+.recordCategory
+{
+    text-align: left;
+}
+
+.recordSection
+{
+    font-size: 13px;
+    color: #999;
+}
+
+.moderationActions form
+{
+    display: inline;
+}
+
+/* Plain glyphs like the moderator delete link on the leaderboard (.delete a) */
+.moderationActions button
+{
+    font: inherit;
+    background: transparent;
+    border: none;
+    padding: 0 4px;
+    cursor: pointer;
+}
+
+.moderationActions .approve
+{
+    color: LimeGreen;
+}
+
+.moderationActions .reject
+{
+    color: Red;
+}
+
+.moderationActions button:hover
+{
+    color: White;
+}
+
+.dimmed td
+{
+    opacity: 0.45;
+}
+
+/* Moderation log */
+
+.logDateColumn { width: 130px; }
+.moderatorColumn { width: 130px; }
+.logActionColumn { width: 100px; }
+
+.moderatorColumn,
+.moderatorName,
+.logActionColumn,
+.logAction
+{
+    text-align: left;
+}

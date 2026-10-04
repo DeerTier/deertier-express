@@ -1,0 +1,48 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>Users</h1>
+    <h2>{{Users.length}} with roles</h2>
+  </div>
+
+  <div class="submitButtonContainer">
+    <a class="genericButton" href="/admin/manageUsers/edit">Change User Roles</a>
+  </div>
+</div>
+
+<div class="categoryNote">
+    The sites current administrators and moderators are listed below.
+</div>
+
+<div class="scoreTable">
+  <table class="defaultTable">
+    <thead>
+      <tr>
+        <th class="playerColumn sorting_asc">
+          Name
+        </th>
+        <th class="descriptionColumn">
+          Roles
+        </th>
+        <th class="editColumn nosort">
+          Edit
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Users}}
+        <tr>
+          <td class="playerName">
+            {{Name}}
+          </td>
+          <td class="description">
+            {{Roles}}
+          </td>
+          <td class="videoLink">
+            <a href="/admin/manageUsers/edit?name={{encodeURIComponent Name}}" title="Edit"><i class="fa fa-pencil"></i></a>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

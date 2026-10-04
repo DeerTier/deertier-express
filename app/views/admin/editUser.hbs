@@ -1,0 +1,36 @@
+<div id="adminEdit">
+  <div class="addTimeTitle">
+    {{Title}}
+  </div>
+
+  <br />
+
+  <form method="post" action="/admin/manageUsers/edit">
+    <div class="addTimeForm">
+      Username<br />
+      <input type="text" class="adminTextField" name="name" maxlength="100" value="{{User.Name}}" /><br />
+
+      Moderator<br />
+      <select class="adminTextField" name="moderator">
+        {{#each ModeratorOptions}}
+          <option value="{{Value}}" {{#if (eq Value @root.User.IsModerator)}}selected{{/if}}>{{Label}}</option>
+        {{/each}}
+      </select><br />
+
+      Administrator<br />
+      <input type="checkbox" name="administrator" value="1" {{#if User.IsAdministrator}}checked{{/if}} /><br />
+    </div>
+
+    <input class="genericButton" type="submit" value="Save" />
+  </form>
+
+  <p class="adminBackLink">
+    <a href="/admin/manageUsers">Back to Users</a>
+  </p>
+
+  {{#if Message}}
+    <div class="statusLiteral">
+      {{Message}}
+    </div>
+  {{/if}}
+</div>

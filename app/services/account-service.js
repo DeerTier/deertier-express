@@ -2,6 +2,8 @@ const utils = require('../common/utils');
 const passwordUtil = require('../common/password-util');
 const ModeratorType = require('../common/moderator-type');
 const accountRepository = require('../data/account-repository');
+const leaderboardRepository = require('../data/leaderboard-repository');
+const moderationService = require('./moderation-service');
 
 const accountService = {};
 
@@ -23,6 +25,35 @@ accountService.verifyPassword = function(user, password)
 accountService.getUser = async function(username)
 {
   return await accountRepository.getUser(username);
+};
+
+accountService.getStaff = async function()
+{
+  return await accountRepository.getStaff();
+};
+
+// Display names of a user's roles, e.g. [ 'Administrator', 'Hidden moderator' ]
+accountService.getRoleNames = function(user)
+{
+  return [
+    user.IsAdministrator && 'Administrator',
+    user.IsModerator == ModeratorType.Moderator && 'Moderator',
+    user.IsModerator == ModeratorType.HiddenModerator && 'Hidden moderator'
+  ].filter(Boolean);
+};
+
+accountService.setUserRoles = async function(userContext, user, moderatorType, isAdministrator)
+{
+  if (!userContext.user)
+    throw new Error('Log in as an administrator to change roles.');
+
+  if (!Object.values(ModeratorType).includes(moderatorType))
+    throw new Error('Choose a moderator role.');
+
+  await accountRepository.setUserRoles(user.ID, moderatorType, isAdministrator);
+
+  const roleNames = accountService.getRoleNames({ IsModerator: moderatorType, IsAdministrator: isAdministrator });
+  await moderationService.logChangeUserRoles(userContext, user, roleNames);
 };
 
 accountService.getAuthenticatedUser = async function(req)
@@ -100,6 +131,16 @@ accountService.resetPassword = async function(username)
 accountService.getModerators = async function()
 {
   return await accountRepository.getModerators();
+};
+
+accountService.getAdmins = async function()
+{
+  return await accountRepository.getAdmins();
+};
+
+accountService.getMyRecords = async function(userContext)
+{
+  return await leaderboardRepository.getAllRecordsByUsername(userContext.user.Name);
 };
 
 module.exports = accountService;

@@ -1,0 +1,72 @@
+<div class="tableTitleBar">
+  <div class="tableTitleContainer">
+    <h1>My Submitted Records</h1>
+    <h2>{{Records.length}} records submitted</h2>
+  </div>
+</div>
+
+<div class="categoryNote">
+  All records you have submitted and their current status.
+</div>
+
+<div class="scoreTable">
+  <table class="defaultTable">
+    <thead>
+      <tr>
+        <th class="dateSubmittedColumn sorting_asc">
+          Date
+        </th>
+        <th class="categoryColumn">
+          Category
+        </th>
+        <th class="gameTimeColumn">
+          Game Time
+        </th>
+        <th class="realTimeColumn">
+          Real Time
+        </th>
+        <th class="proofColumn nosort">
+          Video
+        </th>
+        <th class="commentColumn nosort">
+          Comment
+        </th>
+        <th class="statusColumn">
+          Status
+        </th>
+        <th class="reasonColumn">
+          Reason
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#each Records}}
+        <tr {{#if IsDimmed}}class="dimmed"{{/if}}>
+          <td data-order="{{DateSubmittedSortOrder}}">
+            {{DateSubmittedAsString}}
+          </td>
+          {{> recordCategory }}
+          <td data-order="{{GameTimeSortOrder}}">
+            {{FormattedGameTime}}
+          </td>
+          <td data-order="{{RealTimeSeconds}}">
+            {{FormattedRealTime}}
+          </td>
+          <td class="videoLink">
+            {{{VideoURLAsLink}}}
+          </td>
+          <td class="comment">
+            {{{HtmlComment}}}
+          </td>
+          <td class="status">
+            {{Status}}
+          </td>
+          <td class="reason">
+            {{StatusComment}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

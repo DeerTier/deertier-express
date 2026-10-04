@@ -1,11 +1,39 @@
 const express = require('express');
 const authentication = require('../middlewares/authentication');
 const accountService = require('../services/account-service');
-const config = require('../config/config');
+const leaderboardService = require('../services/leaderboard-service');
 const utils = require('../common/utils');
+const RecordStatus = require('../common/record-status');
 const logger = require('../common/logger')(__filename);
 
 const router = express.Router();
+
+// My records
+// ----------------------------------------------------------------------------
+router.get('/myRecords', authentication.authorize, async function(req, res)
+{
+  const userContext = await accountService.getUserContext(req);
+  const records = await accountService.getMyRecords(userContext);
+
+  // The records currently on a leaderboard, the same way the leaderboard picks them
+  const leaderboardRecordIds = await leaderboardService.getLeaderboardRecordIds(records);
+
+  const recordModels = (await leaderboardService.getRecordModels(records)).map(record =>
+  {
+    return {
+      ...record,
+      // Dimmed when not live: approved records beaten by a better one, and deleted records
+      IsDimmed: (record.Status === RecordStatus.Approved && !leaderboardRecordIds.has(record.ID))
+        || record.Status === RecordStatus.Deleted
+    };
+  });
+
+  const viewModel = {};
+  viewModel.Title = 'My Submitted Records';
+  viewModel.Records = recordModels;
+  res.render('account/myRecords', viewModel);
+});
+
 
 // Log in
 // ----------------------------------------------------------------------------
