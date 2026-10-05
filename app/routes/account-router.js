@@ -1,6 +1,7 @@
 const express = require('express');
 const authentication = require('../middlewares/authentication');
 const accountService = require('../services/account-service');
+const apiService = require('../services/api-service');
 const leaderboardService = require('../services/leaderboard-service');
 const utils = require('../common/utils');
 const RecordStatus = require('../common/record-status');
@@ -193,6 +194,24 @@ function renderChangePasswordView(res, message)
   viewModel.Message = message;
   res.render('account/changePassword', viewModel);
 }
+
+// Create API key
+// ----------------------------------------------------------------------------
+
+router.post('/createApiKey', authentication.authorize, async function(req, res)
+{
+  const user = await accountService.getAuthenticatedUser(req);
+
+  try
+  {
+    const apiKey = await apiService.createApiKey(user.Name);
+    renderChangePasswordView(res, 'API key created: ' + apiKey);
+  }
+  catch (error)
+  {
+    renderChangePasswordView(res, 'Failed to create API key: ' + error.message);
+  }
+});
 
 // Reset password
 // ----------------------------------------------------------------------------

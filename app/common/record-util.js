@@ -161,6 +161,12 @@ function parseEscapeTime(timeString)
     throw new Error(`Invalid escape time: ${timeString}`);
 }
 
+// Parse times as players enter them, for changing the times of an existing record.
+// parseRealTime and parseGameTime return TimeSeconds -1 for invalid input, parseEscapeTime throws.
+recordUtil.parseRealTime = getFormattedTime;
+recordUtil.parseGameTime = getFormattedGameTime;
+recordUtil.parseEscapeTime = parseEscapeTime;
+
 recordUtil.getFormattedRealTime = function(realTimeSeconds)
 {
   const realTime = Temporal.Duration.from({ seconds: realTimeSeconds }).round({ largestUnit: 'hours', smallestUnit: 'seconds', roundingMode: 'trunc' });

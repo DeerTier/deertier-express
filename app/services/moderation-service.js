@@ -7,7 +7,8 @@ const ModerationActionType =
   DeleteRecord: 2,
   ApproveRecord: 3,
   RejectRecord: 4,
-  ChangeUserRoles: 5
+  ChangeUserRoles: 5,
+  EditRecord: 6
 };
 
 const actionNames =
@@ -16,7 +17,8 @@ const actionNames =
   [ModerationActionType.DeleteRecord]: 'Deleted',
   [ModerationActionType.ApproveRecord]: 'Approved',
   [ModerationActionType.RejectRecord]: 'Rejected',
-  [ModerationActionType.ChangeUserRoles]: 'Changed roles'
+  [ModerationActionType.ChangeUserRoles]: 'Changed roles',
+  [ModerationActionType.EditRecord]: 'Edited'
 };
 
 // Record actions log the record ID in RelatedId1
@@ -24,8 +26,11 @@ const recordActions = [
   ModerationActionType.SubmitRecord,
   ModerationActionType.DeleteRecord,
   ModerationActionType.ApproveRecord,
-  ModerationActionType.RejectRecord
+  ModerationActionType.RejectRecord,
+  ModerationActionType.EditRecord
 ];
+
+const maxDescriptionLength = 1000;
 
 const moderationService = {};
 
@@ -69,6 +74,15 @@ moderationService.logRejectRecord = async function(userContext, record, reason)
 {
   const action = createModerationAction(userContext, ModerationActionType.RejectRecord, reason);
   action.Description = `Rejected record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]`;
+  action.RelatedId1 = record.ID;
+  await logAction(action);
+};
+
+moderationService.logEditRecord = async function(userContext, record, changes, reason)
+{
+  const action = createModerationAction(userContext, ModerationActionType.EditRecord, reason);
+  action.Description = `Edited record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]: ${changes.join(', ')}`
+    .substring(0, maxDescriptionLength);
   action.RelatedId1 = record.ID;
   await logAction(action);
 };

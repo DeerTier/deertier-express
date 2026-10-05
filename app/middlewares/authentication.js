@@ -36,8 +36,17 @@ function clearHostOnlyToken(res)
   }
 }
 
-authentication.authenticate = function(req, res, next)
+authentication.authenticate = async function(req, res, next)
 {
+
+  // Check if we're on an API path, and if so, authenticate using the API key instead of the login cookie
+  req.isApiRequest = isApiPath(req.path);
+  if (req.isApiRequest)
+  {
+    await authenticateApiKey(req, res, next);
+    return;
+  }
+
   const token = req.cookies[authTokenCookie];
   if (token == null)
   {
@@ -56,6 +65,41 @@ authentication.authenticate = function(req, res, next)
   });
 };
 
+async function authenticateApiKey(req, res, next)
+{
+  const apiKey = getApiKey(req);
+
+  // No API key provided, continue unauthenticated
+  if (apiKey == null)
+  {
+    next();
+    return;
+  }
+
+  const user = await accountService.getUserByApiKey(apiKey);
+  if (!user)
+  {
+    res.status(401).json({ error: 'invalid api key' });
+    return;
+  }
+
+  req.username = user.Name;
+  req.user = user;
+  next();
+}
+
+function isApiPath(path)
+{
+  const lowerPath = path.toLowerCase();
+  return (lowerPath === '/api' || lowerPath.startsWith('/api/'));
+}
+
+function getApiKey(req)
+{
+  const match = /^Bearer\s+(\S+)$/i.exec(req.headers.authorization ?? '');
+  return match?.[1] ?? null;
+}
+
 authentication.authorize = function(req, res, next)
 {
   if (req.username)
@@ -64,8 +108,7 @@ authentication.authorize = function(req, res, next)
   }
   else
   {
-    const returnUrl = req.originalUrl;
-    res.redirect(`/account/login?returnUrl=${encodeURIComponent(returnUrl)}`);
+    denyAccess(req, res, null);
   }
 };
 
@@ -98,14 +141,9 @@ authentication.authorizeAdmin = async function(req, res, next)
   {
     next();
   }
-  else if (!user)
-  {
-    const returnUrl = req.originalUrl;
-    res.redirect(`/account/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-  }
   else
   {
-    res.send('unauthorized access');
+    denyAccess(req, res, user);
   }
 };
 
@@ -117,6 +155,19 @@ authentication.authorizeModerator = async function(req, res, next)
   {
     next();
   }
+  else
+  {
+    denyAccess(req, res, user);
+  }
+};
+
+// API requests get a status code. Page requests go to the login page when not logged in.
+function denyAccess(req, res, user)
+{
+  if (req.isApiRequest)
+  {
+    res.status(user ? 403 : 401).json({ error: (user ? 'forbidden' : 'unauthorized') });
+  }
   else if (!user)
   {
     const returnUrl = req.originalUrl;
@@ -126,7 +177,7 @@ authentication.authorizeModerator = async function(req, res, next)
   {
     res.send('unauthorized access');
   }
-};
+}
 
 // Verify adminKey in request query
 function hasAdminKey(req)
