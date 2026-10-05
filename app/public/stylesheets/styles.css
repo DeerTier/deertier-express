@@ -1,6 +1,6 @@
 ﻿@font-face {
-	font-family: OptimusPrinceps;
-	src: url('../fonts/optimusprinceps.otf');
+    font-family: OptimusPrinceps;
+    src: url('../fonts/optimusprinceps.otf');
 }
 
 html
@@ -16,7 +16,7 @@ body
     background-color: Black;
     margin: 0px 0px 0px 0px;
     min-height: 100%;
-    background-image:url('../images/purple_stars2.jpg');
+    background-image: url('../images/purple_stars2.jpg');
     background-position: center 0;
 }
 
@@ -42,7 +42,7 @@ ul
 
 ul li
 {
-   list-style-type: square;
+    list-style-type: square;
 }
 
 table
@@ -210,7 +210,7 @@ a:hover
 {
     padding-top: 50px;
     padding-bottom: 35px;
-    background-image:url('../images/logo.png');
+    background-image: url('../images/logo.png');
     background-repeat: no-repeat;
     background-position: center 23px;
 }
@@ -218,7 +218,7 @@ a:hover
 #header
 {
     color: #EEEFF7;
-    background-image:url('../images/subtle_carbon2.png');
+    background-image: url('../images/subtle_carbon2.png');
     height: 120px;
 }
 
@@ -274,10 +274,8 @@ a:hover
 .navSectionExpander
 {
     font-weight: bold;
-    display: inline-block;
     margin-bottom: 10px;
-    padding: 2px 0px 0px 25px;
-    background-repeat: no-repeat;
+    padding: 2px;
 }
 
 .navSectionExpander:hover 
@@ -285,15 +283,26 @@ a:hover
     color: #8B54DE;
 }
 
-    .navSectionExpander_Collapsed
-    {
-        background-image:url('../images/right_arrow_24x24.png');
-    }
+h3.navSectionExpander span
+{
+    background-image: url('../images/right_arrow_24x24.png');
+    background-repeat: no-repeat;
+    float: right;
+    height: 24px;
+    margin-top: -2px;
+    pointer-events: none;
+    width: 24px;
+}
 
-    .navSectionExpander_Expanded
-    {
-        background-image:url('../images/down_arrow_24x24.png');
-    }
+h3.navSectionExpander span.open
+{
+    background-image: url('../images/down_arrow_24x24.png');
+    background-repeat: no-repeat;
+    float: right;
+    height: 24px;
+    margin-top: -2px;
+    width: 24px;
+}
 
 .navSectionExpander:hover
 {
@@ -313,9 +322,23 @@ a:hover
 
 .navSectionContent h3
 {
+    border: 1px solid #FDC115;
     font-weight: bold;
     margin-bottom: 5px;
     color: #FDC115;
+}
+
+.navSectionContent ul
+{
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0s;
+}
+
+.navSectionContent ul.open
+{
+    max-height: 900px;
 }
 
 .navSectionContent ul li
@@ -612,9 +635,9 @@ textarea
 
 .genericButton:active
 {
-    position:relative;
-	top:1px;
-	border-top-color: #201333;
+    position: relative;
+    top: 1px;
+    border-top-color: #201333;
     background: #201333;
 }
 
@@ -769,7 +792,7 @@ textarea
 .wikiContent .discordButton a
 {
     display: inline-block;
-    background-image:url('../images/discord.png');
+    background-image: url('../images/discord.png');
     width: 100px;
     height: 34px;
     vertical-align: middle;
