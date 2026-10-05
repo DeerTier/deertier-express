@@ -56,6 +56,22 @@ accountService.setUserRoles = async function(userContext, user, moderatorType, i
   await moderationService.logChangeUserRoles(userContext, user, roleNames);
 };
 
+accountService.getUserByApiKey = async function(apiKey)
+{
+  if (utils.isNullOrWhitespace(apiKey))
+  {
+    return null;
+  }
+
+  return await accountRepository.getUserByApiKeyHash(passwordUtil.hashApiKey(apiKey));
+};
+
+// Store the hash of the API key instead of the key
+accountService.setApiKey = async function(username, apiKey)
+{
+  return await accountRepository.setApiKeyHash(username, passwordUtil.hashApiKey(apiKey));
+};
+
 accountService.getAuthenticatedUser = async function(req)
 {
   // Ensure request is authenticated

@@ -149,7 +149,9 @@ CREATE TABLE `tblUsers` (
   `PasswordType` tinyint unsigned NOT NULL,
   `IsModerator` tinyint unsigned NOT NULL,
   `IsAdministrator` tinyint(1) NOT NULL DEFAULT '0',
+  `ApiKeyHash` char(64) DEFAULT NULL,
   PRIMARY KEY (`ID`),
+  UNIQUE KEY `idx_tblUsers_ApiKeyHash` (`ApiKeyHash`),
   KEY `idx_tblUsers_IsModerator` (`IsModerator`),
   KEY `idx_tblUsers_Name` (`Name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -182,5 +184,6 @@ INSERT INTO `schema_migrations` (version) VALUES
   ('20261003120000'),
   ('20261003130000'),
   ('20261003140000'),
-  ('20261003150000');
+  ('20261003150000'),
+  ('20261004103400');
 UNLOCK TABLES;

@@ -73,4 +73,14 @@ passwordUtil.generateRandomPassword = function()
   return crypto.randomBytes(16).toString('hex');
 };
 
+passwordUtil.generateApiKey = function()
+{
+  return crypto.randomBytes(32).toString('base64url');
+};
+
+passwordUtil.hashApiKey = function(apiKey)
+{
+  return crypto.createHash('sha256').update(apiKey).digest('hex');
+};
+
 module.exports = passwordUtil;

@@ -88,6 +88,87 @@ leaderboardService.deleteRecord = async function(userContext, record, comment)
   return result;
 };
 
+// Updates a record, returns whether anything changed.
+leaderboardService.updateRecord = async function(userContext, record, changes, reason)
+{
+  // Get only the columns that have actually changed
+  const columns = Object.fromEntries(
+    Object.entries(changes).filter(([name, value]) => !isSameValue(record[name], value)));
+
+  if (Object.keys(columns).length === 0)
+  {
+    return false;
+  }
+
+  // If status is changed, set the appropriate fields
+  const isStatusChange = (columns.Status !== undefined);
+  if (isStatusChange)
+  {
+    columns.StatusComment = reason || null;
+    columns.StatusChangedByUserId = userContext.user.ID;
+    columns.StatusChangedAt = new Date();
+  }
+
+  if (!await leaderboardRepository.updateRecord(record.ID, columns))
+  {
+    return false;
+  }
+
+  const updatedRecord = { ...record, ...columns };
+
+  const logStatusChange = (isStatusChange ? statusChangeLogs[columns.Status] : undefined);
+  if (logStatusChange)
+  {
+    await logStatusChange(userContext, updatedRecord, reason);
+  }
+
+  // Time strings and status details describe the change well enough on their own
+  const editedFields = Object.keys(changes)
+    .filter(name => name in columns && !name.endsWith('Seconds') && !(name === 'Status' && logStatusChange));
+
+  if (editedFields.length > 0)
+  {
+    const descriptions = editedFields.map(name => `${name} [${formatLogValue(record[name])}] -> [${formatLogValue(columns[name])}]`);
+    await moderationService.logEditRecord(userContext, updatedRecord, descriptions, reason);
+  }
+
+  return true;
+};
+
+// Setting a record to Pending (e.g. to have it checked again) has no action of its own and is logged as an edit
+const statusChangeLogs =
+{
+  [RecordStatus.Approved]: moderationService.logApproveRecord,
+  [RecordStatus.Rejected]: moderationService.logRejectRecord,
+  [RecordStatus.Deleted]: moderationService.logDeleteRecord
+};
+
+// Compares a column value loaded from the database with a new value. 
+function isSameValue(oldValue, newValue)
+{
+  if (typeof newValue === 'string')
+  {
+    return ((oldValue ?? '') === newValue);
+  }
+
+  if (newValue instanceof Date)
+  {
+    return (oldValue instanceof Date && oldValue.valueOf() === newValue.valueOf());
+  }
+
+  if (typeof newValue === 'number')
+  {
+    return (oldValue != null && Number(oldValue) === newValue);
+  }
+
+  return (oldValue === newValue);
+}
+
+function formatLogValue(value)
+{
+  return (value instanceof Date ? value.toISOString() : (value ?? ''));
+}
+
 // The leaderboard records of all categories
 leaderboardService.getAllRecords = async function()
 {
@@ -106,9 +187,9 @@ leaderboardService.getAllRecords = async function()
   return results.sort((a, b) => a.ID - b.ID);
 };
 
-leaderboardService.getAllPendingRecords = async function()
+leaderboardService.getRecordsByStatus = async function(statuses, since, after)
 {
-  return await leaderboardRepository.getAllPendingRecords();
+  return await leaderboardRepository.getRecordsByStatus(statuses, since, after);
 };
 
 leaderboardService.getLeaderboardRecordIds = async function(records)

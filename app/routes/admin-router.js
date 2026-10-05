@@ -521,7 +521,7 @@ router.get('/moderationLog', authentication.authorizeModerator, async function(r
 // ----------------------------------------------------------------------------
 router.get('/moderationQueue', authentication.authorizeModerator, async function(req, res, next)
 {
-  const records = await leaderboardService.getAllPendingRecords();
+  const records = await leaderboardService.getRecordsByStatus([RecordStatus.Pending]);
 
   const viewModel = {};
   viewModel.Title = 'Moderation Queue';

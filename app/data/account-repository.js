@@ -49,6 +49,31 @@ accountRepository.setUserRoles = async function(userId, moderatorType, isAdminis
   });
 };
 
+accountRepository.getUserByApiKeyHash = async function(apiKeyHash)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [results] = await connection.execute(
+      'SELECT * FROM tblUsers WHERE ApiKeyHash = :ApiKeyHash LIMIT 1',
+      { ApiKeyHash: apiKeyHash }
+    );
+
+    return results?.[0];
+  });
+};
+
+accountRepository.setApiKeyHash = async function(username, apiKeyHash)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [result] = await connection.execute(
+      'UPDATE tblUsers SET ApiKeyHash = :ApiKeyHash WHERE Name = :Username',
+      { ApiKeyHash: apiKeyHash, Username: username });
+
+    return (result.affectedRows > 0);
+  });
+};
+
 accountRepository.addUser = async function(user)
 {
   return await dbConnectionProvider.execute(async (connection) =>

@@ -271,6 +271,18 @@ leaderboardRepository.addRecord = async function(record)
   });
 };
 
+leaderboardRepository.updateRecord = async function(recordId, changes)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [result] = await connection.query(
+      'UPDATE tblRecords SET ? WHERE ID = ?',
+      [ changes, recordId ]);
+
+    return result.affectedRows === 1;
+  });
+};
+
 leaderboardRepository.approveRecord = async function(recordId, userId, comment)
 {
   return await setRecordStatus(recordId, [ RecordStatus.Pending ], RecordStatus.Approved, userId, comment);
@@ -321,14 +333,32 @@ leaderboardRepository.getAllRecordsByUsername = async function(username)
   });
 };
 
-leaderboardRepository.getAllPendingRecords = async function()
+// since (optional): only records whose status changed at or after it. Records without a status change (still
+// Pending, or approved automatically when submitted) count from when they were submitted.
+// after (optional): only records with a higher ID.
+leaderboardRepository.getRecordsByStatus = async function(statuses, since, after)
 {
+  let sql = 'SELECT * FROM tblRecords WHERE Status IN (?)';
+  const params = [ statuses ];
+
+  if (since)
+  {
+    sql += ' AND COALESCE(StatusChangedAt, DateSubmitted) >= ?';
+    params.push(since);
+  }
+
+  if (after)
+  {
+    sql += ' AND ID > ?';
+    params.push(after);
+  }
+
+  // Oldest first, so the queue is handled in submission order
+  sql += ' ORDER BY DateSubmitted, ID';
+
   return await dbConnectionProvider.execute(async (connection) =>
   {
-    const [records] = await connection.execute(
-      // Oldest first, so the queue is handled in submission order
-      'SELECT * FROM tblRecords WHERE Status = :Status ORDER BY DateSubmitted, ID',
-      { Status: RecordStatus.Pending });
+    const [records] = await connection.query(sql, params);
     return records;
   });
 };
