@@ -1,6 +1,7 @@
 const express = require('express');
 const createError = require('http-errors');
 const VerificationMode = require('../common/verification-mode');
+const RecordStatus = require('../common/record-status');
 const ModeratorType = require('../common/moderator-type');
 const authentication = require('../middlewares/authentication');
 const leaderboardRepository = require('../data/leaderboard-repository');
