@@ -27,6 +27,11 @@ accountService.getUser = async function(username)
   return await accountRepository.getUser(username);
 };
 
+accountService.getUserFromId = async function(userId)
+{
+  return await accountRepository.getUserFromId(userId);
+};
+
 accountService.getStaff = async function()
 {
   return await accountRepository.getStaff();
@@ -156,7 +161,7 @@ accountService.getAdmins = async function()
 
 accountService.getMyRecords = async function(userContext)
 {
-  return await leaderboardRepository.getAllRecordsByUsername(userContext.user.Name);
+  return await leaderboardRepository.getAllRecordsByUserId(userContext.user.ID);
 };
 
 module.exports = accountService;

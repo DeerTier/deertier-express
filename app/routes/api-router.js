@@ -137,7 +137,18 @@ router.post('/records', authentication.authorize, async function(req, res, next)
   // If the user is a moderator and has specified a player, use that; otherwise, use the authenticated user's name
   const player = isModerator && req.body.Player ? req.body.Player : userContext.user.Name;
   var isModeratorAction = player !== userContext.user.Name;
-  
+
+  let userId = userContext.user.UserId;
+  if (isModeratorAction)
+  {
+    const otherUser = await accountService.getUser(player)
+    if (!otherUser)
+    {
+      return res.status(400).json({ error: 'Player not found' });
+    }
+    userId = otherUser.UserId;
+  }
+
   const category = await categoryService.getCategory(req.body.CategoryId);
   if (category == null)
   {
@@ -153,7 +164,7 @@ router.post('/records', authentication.authorize, async function(req, res, next)
 
   const record = recordUtil.createRecord(
     category,
-    player,
+    userId,
     req.body.GameTime,
     req.body.EscapeGameTime,
     req.body.RealTime,

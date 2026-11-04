@@ -3,12 +3,12 @@ const utils = require('./utils');
 
 const recordUtil = {};
 
-recordUtil.createRecord = function(category, player, gameTime, escapeGameTime, realTime, videoLink, comment, submittedByUserId)
+recordUtil.createRecord = function(category, userId, gameTime, escapeGameTime, realTime, videoLink, comment, submittedByUserId)
 {
   const record =
   {
     CategoryId: category.Id,
-    Player: player,
+    UserId: userId,
     GameTimeSeconds: 0,
     RealTimeSeconds: 0,
     CeresTime: 0,
