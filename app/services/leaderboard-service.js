@@ -16,7 +16,7 @@ leaderboardService.getRecord = async function(id)
 leaderboardService.getRecords = async function(category, excludeRecordsWithoutVideo)
 {
   const records = await leaderboardRepository.getRecords(category.Id, excludeRecordsWithoutVideo);
-  return getBestRecordPerPlayer(category, records);
+  return getBestRecordPerUserId(category, records);
 };
 
 leaderboardService.getNewRecordStatus = async function(category, record, isModeratorAction)
@@ -180,7 +180,7 @@ leaderboardService.getAllRecords = async function()
     const category = await categoryService.getCategory(categoryId);
     if (category)
     {
-      results.push(...getBestRecordPerPlayer(category, categoryRecords));
+      results.push(...getBestRecordPerUserId(category, categoryRecords));
     }
   }
 
@@ -202,7 +202,7 @@ leaderboardService.getLeaderboardRecordIds = async function(records)
     const category = await categoryService.getCategory(categoryId);
     if (category)
     {
-      getBestRecordPerPlayer(category, categoryRecords).forEach(r => recordIds.add(r.ID));
+      getBestRecordPerUserId(category, categoryRecords).forEach(r => recordIds.add(r.ID));
     }
   }
 
@@ -245,21 +245,19 @@ leaderboardService.getRecordModels = async function(records)
 
 // Only show the best approved record per player in a category since we now have multiple records per player
 // to keep the history of previously submitted records, so we need to do some filtering here.
-function getBestRecordPerPlayer(category, records)
+function getBestRecordPerUserId(category, records)
 {
-  const players = new Set();
+  const userIds = new Set();
 
   return records
     .sort((a, b) => recordUtil.compareRecords(category, a, b))
     .filter(r =>
     {
-      const player = r.Player.toLowerCase();
-      if (players.has(player))
+      if (userIds.has(r.UserId))
       {
         return false;
       }
-
-      players.add(player);
+      userIds.add(r.UserId);
       return true;
     });
 }

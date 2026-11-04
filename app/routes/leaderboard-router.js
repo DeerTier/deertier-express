@@ -51,8 +51,9 @@ router.get('/:categoryUrlName', async function(req, res)
   const records = await leaderboardService.getRecords(category, viewModel.HideRecordsWithoutVideo);
   const rankedRecords = rankRecords(records, r => recordUtil.getRankKey(category, r));
 
-  viewModel.Records = rankedRecords
-    .map(r => mapRecord(r, category));
+  viewModel.Records = await Promise.all(
+    rankedRecords.map(async (r) => await mapRecord(r, category))
+  );
 
   res.render('leaderboard/index', viewModel);
 });
@@ -94,9 +95,10 @@ function rankRecords(records, recordRankKey)
   return rankedRecords;
 }
 
-function mapRecord(rankedRecord, category)
+async function mapRecord(rankedRecord, category)
 {
   const record = rankedRecord.Record;
+  const user = await accountService.getUserFromId(record.UserId);
 
   const recordModel =
   {
@@ -187,6 +189,7 @@ router.post('/:categoryUrlName/submit', authentication.authorize, async function
 
   const userContext = await accountService.getUserContext(req);
   let isModeratorAction = false;
+  let userId = 0;
 
   // Auto-approve runs a moderator submits for someone else.
   if (userContext.user.IsModerator && !utils.isNullOrWhitespace(username)
@@ -194,15 +197,20 @@ router.post('/:categoryUrlName/submit', authentication.authorize, async function
   {
     username = username.trim();
     isModeratorAction = true;
-
+    const otherUser = await accountService.getUser(username)
+    if (!otherUser)
+    {
+      return renderSubmitTimeView(res, category, `Player [${username}] not found`);
+    }
     logger.info(`Moderator submitting record for another user: [${username}]`);
+    userId = otherUser.ID;
   }
   else
   {
-    username = userContext.user.Name;
+    userId = userContext.user.ID;
   }
 
-  const record = recordUtil.createRecord(category, username, gameTime, escapeGameTime, realTime, videoLink, comment, userContext.user.ID);
+  const record = recordUtil.createRecord(category, userId, gameTime, escapeGameTime, realTime, videoLink, comment, userContext.user.ID);
   if (!record)
   {
     return renderSubmitTimeView(res, category, 'Invalid time');
@@ -271,7 +279,7 @@ router.post('/:categoryUrlName/moderatorDeleteRecord', authentication.authorize,
 
   if (!await leaderboardService.deleteRecord(userContext, record, req.body.comment?.trim()))
   {
-    logger.error(`Failed to delete record: [${id}], [${record.Player}], [${category.UrlName}]`);
+    logger.error(`Failed to delete record: [${id}], [${record.UserId}], [${category.UrlName}], [${record.RealTimeString}]`);
     return res.send('error deleting record');
   }
 

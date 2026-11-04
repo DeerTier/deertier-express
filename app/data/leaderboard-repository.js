@@ -322,13 +322,13 @@ leaderboardRepository.getAllRecords = async function()
   });
 };
 
-leaderboardRepository.getAllRecordsByUsername = async function(username)
+leaderboardRepository.getAllRecordsByUserId = async function(userId)
 {
   return await dbConnectionProvider.execute(async (connection) =>
   {
     const [records] = await connection.execute(
-      'SELECT * FROM tblRecords WHERE Player = :Player',
-      { Player: username });
+      'SELECT * FROM tblRecords WHERE UserId = :UserId',
+      { UserId: userId });
     return records;
   });
 };

@@ -3,7 +3,7 @@
 --
 -- Host: db    Database: deertier
 -- ------------------------------------------------------
--- Server version	8.4.11
+-- Server version	8.4.13
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -92,7 +92,7 @@ CREATE TABLE `tblExtensions` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `tblModerationLog` (
-  `Id` int NOT NULL AUTO_INCREMENT,
+  `Id` bigint NOT NULL AUTO_INCREMENT,
   `UserId` int NOT NULL,
   `Action` tinyint unsigned NOT NULL,
   `Description` varchar(1000) DEFAULT NULL,
@@ -114,9 +114,8 @@ CREATE TABLE `tblModerationLog` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8mb4 */;
 CREATE TABLE `tblRecords` (
-  `ID` int NOT NULL AUTO_INCREMENT,
+  `ID` bigint NOT NULL AUTO_INCREMENT,
   `CategoryId` int NOT NULL,
-  `Player` varchar(100) NOT NULL,
   `RealTimeSeconds` int NOT NULL,
   `RealTimeString` varchar(100) NOT NULL,
   `GameTimeSeconds` int DEFAULT NULL,
@@ -130,6 +129,7 @@ CREATE TABLE `tblRecords` (
   `StatusComment` varchar(1000) DEFAULT NULL,
   `StatusChangedByUserId` int DEFAULT NULL,
   `StatusChangedAt` datetime(6) DEFAULT NULL,
+  `UserId` int NOT NULL,
   PRIMARY KEY (`ID`),
   KEY `idx_tblRecords_CategoryId` (`CategoryId`),
   KEY `idx_tblRecords_Status` (`Status`)
@@ -185,5 +185,8 @@ INSERT INTO `schema_migrations` (version) VALUES
   ('20261003130000'),
   ('20261003140000'),
   ('20261003150000'),
-  ('20261004103400');
+  ('20261004103400'),
+  ('20261031120000'),
+  ('20261031130000'),
+  ('20261102120000');
 UNLOCK TABLES;

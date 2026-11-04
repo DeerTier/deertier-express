@@ -49,7 +49,7 @@ moderationService.getModerationLog = async function(limit)
 moderationService.logSubmitRecord = async function(userContext, record)
 {
   const action = createModerationAction(userContext, ModerationActionType.SubmitRecord);
-  action.Description = `Created record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]`;
+  action.Description = `Created record [${record.ID}] for user [${record.UserId}] in category [${record.CategoryId}] with real time [${record.RealTimeString}]`;
   action.RelatedId1 = record.ID;
   await logAction(action);
 };
@@ -57,7 +57,7 @@ moderationService.logSubmitRecord = async function(userContext, record)
 moderationService.logDeleteRecord = async function(userContext, record, reason)
 {
   const action = createModerationAction(userContext, ModerationActionType.DeleteRecord, reason);
-  action.Description = `Deleted record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]`;
+  action.Description = `Deleted record [${record.ID}] for user [${record.UserId}] in category [${record.CategoryId}] with real time [${record.RealTimeString}]`;
   action.RelatedId1 = record.ID;
   await logAction(action);
 };
@@ -65,7 +65,7 @@ moderationService.logDeleteRecord = async function(userContext, record, reason)
 moderationService.logApproveRecord = async function(userContext, record, reason)
 {
   const action = createModerationAction(userContext, ModerationActionType.ApproveRecord, reason);
-  action.Description = `Approved record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]`;
+  action.Description = `Approved record [${record.ID}] for user [${record.UserId}] in category [${record.CategoryId}] with real time [${record.RealTimeString}]`;
   action.RelatedId1 = record.ID;
   await logAction(action);
 };
@@ -73,7 +73,7 @@ moderationService.logApproveRecord = async function(userContext, record, reason)
 moderationService.logRejectRecord = async function(userContext, record, reason)
 {
   const action = createModerationAction(userContext, ModerationActionType.RejectRecord, reason);
-  action.Description = `Rejected record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]`;
+  action.Description = `Rejected record [${record.ID}] for user [${record.UserId}] in category [${record.CategoryId}] with real time [${record.RealTimeString}]`;
   action.RelatedId1 = record.ID;
   await logAction(action);
 };
@@ -81,7 +81,7 @@ moderationService.logRejectRecord = async function(userContext, record, reason)
 moderationService.logEditRecord = async function(userContext, record, changes, reason)
 {
   const action = createModerationAction(userContext, ModerationActionType.EditRecord, reason);
-  action.Description = `Edited record [${record.ID}] for user [${record.Player}] in category [${record.CategoryId}]: ${changes.join(', ')}`
+  action.Description = `Edited record [${record.ID}] for user [${record.UserId}] in category [${record.CategoryId}]: ${changes.join(', ')}`
     .substring(0, maxDescriptionLength);
   action.RelatedId1 = record.ID;
   await logAction(action);

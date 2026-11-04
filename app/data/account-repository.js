@@ -28,6 +28,19 @@ accountRepository.getUser = async function(username)
   });
 };
 
+accountRepository.getUserFromId = async function(userId)
+{
+  return await dbConnectionProvider.execute(async (connection) =>
+  {
+    const [results] = await connection.execute(
+      'SELECT * FROM tblUsers WHERE ID = :UserId LIMIT 1',
+      { UserId: userId }
+    );
+
+    return results?.[0];
+  });
+};
+
 // Users with a role (moderators and administrators)
 accountRepository.getStaff = async function()
 {
